@@ -1,5 +1,9 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import authRoutes from './routes/auth.routes';
+import movieRoutes from './routes/movie.routes';
+import showRoutes from './routes/show.routes';
+import { AppError } from './utils/asyncHandler';
 
 export const createApp = () => {
   const app = express();
@@ -18,14 +22,30 @@ export const createApp = () => {
     });
   });
 
-  // Global Error Handler
+  // API Routes
+  app.use('/api/auth', authRoutes);
+  app.use('/api/movies', movieRoutes);
+  app.use('/api/shows', showRoutes);
+
+  // Centralized Error Handler
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    if (err instanceof AppError) {
+      res.status(err.statusCode).json({
+        success: false,
+        error: {
+          message: err.message,
+          code: err.code,
+        },
+      });
+      return;
+    }
+
     console.error('Unhandled Server Error:', err);
-    res.status(err.status || 500).json({
+    res.status(500).json({
       success: false,
       error: {
-        message: err.message || 'Internal Server Error',
-        code: err.code || 'INTERNAL_ERROR',
+        message: 'Internal Server Error',
+        code: 'INTERNAL_ERROR',
       },
     });
   });
