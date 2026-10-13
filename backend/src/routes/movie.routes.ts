@@ -7,8 +7,7 @@ import {
   deleteMovie,
 } from '../controllers/movie.controller';
 import { authenticate, requireAdmin } from '../middlewares/auth.middleware';
-import { validateBody } from '../middlewares/validate.middleware';
-import { createMovieSchema, updateMovieSchema } from '../validators';
+import { upload } from '../middlewares/multer.middleware';
 
 const router = Router();
 
@@ -16,9 +15,23 @@ const router = Router();
 router.get('/', getMovies);
 router.get('/:id', getMovieById);
 
-// Admin-only endpoints
-router.post('/', authenticate, requireAdmin, validateBody(createMovieSchema), createMovie);
-router.put('/:id', authenticate, requireAdmin, validateBody(updateMovieSchema), updateMovie);
+// Admin-only endpoints (supporting optional poster image file upload via multer)
+router.post(
+  '/',
+  authenticate,
+  requireAdmin,
+  upload.single('poster'),
+  createMovie
+);
+
+router.put(
+  '/:id',
+  authenticate,
+  requireAdmin,
+  upload.single('poster'),
+  updateMovie
+);
+
 router.delete('/:id', authenticate, requireAdmin, deleteMovie);
 
 export default router;

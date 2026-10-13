@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/db';
-import { asyncHandler, AppError } from '../utils/asyncHandler';
+import { asyncHandler } from '../utils/asyncHandler';
+import { ApiError } from '../utils/ApiError';
+import { ApiResponse } from '../utils/ApiResponse';
+import { uploadBufferOnCloudinary } from '../utils/cloudinary';
 
 export const getMovies = asyncHandler(async (req: Request, res: Response) => {
   const movies = await prisma.movie.findMany({
@@ -22,10 +25,7 @@ export const getMovies = asyncHandler(async (req: Request, res: Response) => {
     },
   });
 
-  res.json({
-    success: true,
-    data: { movies },
-  });
+  res.json(new ApiResponse(200, { movies }, 'Movies retrieved successfully'));
 });
 
 export const getMovieById = asyncHandler(async (req: Request, res: Response) => {
@@ -48,31 +48,34 @@ export const getMovieById = asyncHandler(async (req: Request, res: Response) => 
   });
 
   if (!movie) {
-    throw new AppError('Movie not found', 404, 'MOVIE_NOT_FOUND');
+    throw new ApiError(404, 'Movie not found', [], 'MOVIE_NOT_FOUND');
   }
 
-  res.json({
-    success: true,
-    data: { movie },
-  });
+  res.json(new ApiResponse(200, { movie }, 'Movie retrieved successfully'));
 });
 
 export const createMovie = asyncHandler(async (req: Request, res: Response) => {
   const { title, description, durationMin, posterUrl } = req.body;
+  let finalPosterUrl = posterUrl || null;
+
+  // If a file was uploaded via multipart/form-data, upload to Cloudinary
+  if (req.file) {
+    const uploadResult = await uploadBufferOnCloudinary(req.file.buffer, 'movies');
+    if (uploadResult?.secure_url) {
+      finalPosterUrl = uploadResult.secure_url;
+    }
+  }
 
   const movie = await prisma.movie.create({
     data: {
       title,
       description,
-      durationMin,
-      posterUrl: posterUrl || null,
+      durationMin: typeof durationMin === 'string' ? parseInt(durationMin, 10) : durationMin,
+      posterUrl: finalPosterUrl,
     },
   });
 
-  res.status(201).json({
-    success: true,
-    data: { movie },
-  });
+  res.status(201).json(new ApiResponse(201, { movie }, 'Movie created successfully'));
 });
 
 export const updateMovie = asyncHandler(async (req: Request, res: Response) => {
@@ -84,7 +87,15 @@ export const updateMovie = asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (!existingMovie) {
-    throw new AppError('Movie not found', 404, 'MOVIE_NOT_FOUND');
+    throw new ApiError(404, 'Movie not found', [], 'MOVIE_NOT_FOUND');
+  }
+
+  let finalPosterUrl = posterUrl;
+  if (req.file) {
+    const uploadResult = await uploadBufferOnCloudinary(req.file.buffer, 'movies');
+    if (uploadResult?.secure_url) {
+      finalPosterUrl = uploadResult.secure_url;
+    }
   }
 
   const updatedMovie = await prisma.movie.update({
@@ -92,16 +103,17 @@ export const updateMovie = asyncHandler(async (req: Request, res: Response) => {
     data: {
       ...(title !== undefined && { title }),
       ...(description !== undefined && { description }),
-      ...(durationMin !== undefined && { durationMin }),
-      ...(posterUrl !== undefined && { posterUrl: posterUrl || null }),
-      ...(isActive !== undefined && { isActive }),
+      ...(durationMin !== undefined && {
+        durationMin: typeof durationMin === 'string' ? parseInt(durationMin, 10) : durationMin,
+      }),
+      ...(finalPosterUrl !== undefined && { posterUrl: finalPosterUrl || null }),
+      ...(isActive !== undefined && {
+        isActive: typeof isActive === 'string' ? isActive === 'true' : isActive,
+      }),
     },
   });
 
-  res.json({
-    success: true,
-    data: { movie: updatedMovie },
-  });
+  res.json(new ApiResponse(200, { movie: updatedMovie }, 'Movie updated successfully'));
 });
 
 export const deleteMovie = asyncHandler(async (req: Request, res: Response) => {
@@ -120,7 +132,12 @@ export const deleteMovie = asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (showsWithConfirmedBookings.length > 0) {
-    throw new AppError('Cannot delete movie with active confirmed bookings', 400, 'MOVIE_HAS_CONFIRMED_BOOKINGS');
+    throw new ApiError(
+      400,
+      'Cannot delete movie with active confirmed bookings',
+      [],
+      'MOVIE_HAS_CONFIRMED_BOOKINGS'
+    );
   }
 
   // Soft delete if shows exist, or direct delete if no shows exist
@@ -131,10 +148,13 @@ export const deleteMovie = asyncHandler(async (req: Request, res: Response) => {
       where: { id },
       data: { isActive: false },
     });
-    res.json({
-      success: true,
-      data: { message: 'Movie marked as inactive because existing shows are scheduled' },
-    });
+    res.json(
+      new ApiResponse(
+        200,
+        { message: 'Movie marked as inactive because existing shows are scheduled' },
+        'Movie deactivated successfully'
+      )
+    );
     return;
   }
 
@@ -142,8 +162,5 @@ export const deleteMovie = asyncHandler(async (req: Request, res: Response) => {
     where: { id },
   });
 
-  res.json({
-    success: true,
-    data: { message: 'Movie deleted successfully' },
-  });
+  res.json(new ApiResponse(200, { message: 'Movie deleted successfully' }, 'Movie deleted successfully'));
 });

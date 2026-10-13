@@ -8,18 +8,8 @@ type AsyncHandler<Req = Request> = (
 
 export const asyncHandler = <Req = Request>(fn: AsyncHandler<Req>): RequestHandler => {
   return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req as unknown as Req, res, next)).catch(next);
+    Promise.resolve(fn(req as unknown as Req, res, next)).catch((err) => next(err));
   };
 };
 
-export class AppError extends Error {
-  public statusCode: number;
-  public code: string;
-
-  constructor(message: string, statusCode = 500, code = 'INTERNAL_ERROR') {
-    super(message);
-    this.statusCode = statusCode;
-    this.code = code;
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
+export default asyncHandler;

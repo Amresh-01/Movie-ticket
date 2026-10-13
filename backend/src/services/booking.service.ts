@@ -1,6 +1,6 @@
 import { BookingStatus, PaymentStatus } from '@prisma/client';
 import prisma from '../utils/db';
-import { AppError } from '../utils/asyncHandler';
+import { ApiError } from '../utils/ApiError';
 
 const HOLD_DURATION_MINUTES = 5;
 
@@ -24,13 +24,12 @@ export class BookingService {
    */
   static async holdSeats({ showId, userId, seatIds }: HoldSeatsParams) {
     if (seatIds.length < 1 || seatIds.length > 6) {
-      throw new AppError('You can hold between 1 and 6 seats', 400, 'INVALID_SEAT_COUNT');
+      throw new ApiError(400, 'You can hold between 1 and 6 seats', [], 'INVALID_SEAT_COUNT');
     }
 
-    // Sort seat IDs deterministically to prevent deadlock
     const sortedSeatIds = [...new Set(seatIds)].sort();
     if (sortedSeatIds.length !== seatIds.length) {
-      throw new AppError('Duplicate seat IDs provided', 400, 'DUPLICATE_SEATS');
+      throw new ApiError(400, 'Duplicate seat IDs provided', [], 'DUPLICATE_SEATS');
     }
 
     const show = await prisma.show.findUnique({
@@ -39,21 +38,18 @@ export class BookingService {
     });
 
     if (!show) {
-      throw new AppError('Show not found', 404, 'SHOW_NOT_FOUND');
+      throw new ApiError(404, 'Show not found', [], 'SHOW_NOT_FOUND');
     }
 
     if (new Date() >= show.startTime) {
-      throw new AppError('Cannot book seats for a show that has already started', 400, 'SHOW_ALREADY_STARTED');
+      throw new ApiError(400, 'Cannot book seats for a show that has already started', [], 'SHOW_ALREADY_STARTED');
     }
 
-    // Execute atomic hold transaction
     return await prisma.$transaction(
       async (tx) => {
         const now = new Date();
         const holdExpiresAt = new Date(now.getTime() + HOLD_DURATION_MINUTES * 60000);
 
-        // Pessimistic Row Lock with deterministic ordering
-        // Fetch matching ShowSeats and lock rows
         const lockedShowSeats: Array<{
           id: string;
           showId: string;
@@ -71,27 +67,24 @@ export class BookingService {
         `;
 
         if (lockedShowSeats.length !== sortedSeatIds.length) {
-          throw new AppError('One or more selected seats do not exist for this show', 404, 'SEAT_NOT_FOUND');
+          throw new ApiError(404, 'One or more selected seats do not exist for this show', [], 'SEAT_NOT_FOUND');
         }
 
-        // Verify each seat availability
         for (const seat of lockedShowSeats) {
           const isHeld = seat.heldUntil && seat.heldUntil > now;
           const isConfirmed = seat.bookingId !== null;
 
           if (isConfirmed) {
-            throw new AppError('One or more selected seats are already booked', 409, 'SEAT_ALREADY_BOOKED');
+            throw new ApiError(409, 'One or more selected seats are already booked', [], 'SEAT_ALREADY_BOOKED');
           }
 
           if (isHeld && seat.heldByUserId !== userId) {
-            throw new AppError('One or more selected seats are currently held by another user', 409, 'SEAT_CURRENTLY_HELD');
+            throw new ApiError(409, 'One or more selected seats are currently held by another user', [], 'SEAT_CURRENTLY_HELD');
           }
         }
 
-        // Calculate total amount
         const totalAmount = Number(show.price) * sortedSeatIds.length;
 
-        // Create PENDING booking with hold expiration
         const booking = await tx.booking.create({
           data: {
             userId,
@@ -102,7 +95,6 @@ export class BookingService {
           },
         });
 
-        // Update ShowSeat records with hold state and link bookingId
         const showSeatIds = lockedShowSeats.map((s) => s.id);
         await tx.showSeat.updateMany({
           where: { id: { in: showSeatIds } },
@@ -124,21 +116,16 @@ export class BookingService {
         };
       },
       {
-        timeout: 10000, // 10s transaction timeout
+        timeout: 10000,
       }
     );
   }
 
-  /**
-   * Simulates payment for a held booking.
-   * Enforces that hold is still active (holdExpiresAt > now) and belongs to the requesting user.
-   */
   static async simulatePayment({ bookingId, userId, paymentStatus }: SimulatePaymentParams) {
     return await prisma.$transaction(
       async (tx) => {
         const now = new Date();
 
-        // Lock the booking row
         const booking = await tx.booking.findUnique({
           where: { id: bookingId },
           include: {
@@ -153,21 +140,18 @@ export class BookingService {
         });
 
         if (!booking) {
-          throw new AppError('Booking not found', 404, 'BOOKING_NOT_FOUND');
+          throw new ApiError(404, 'Booking not found', [], 'BOOKING_NOT_FOUND');
         }
 
-        // Strict authorization: Customers can never touch other customers' bookings
         if (booking.userId !== userId) {
-          throw new AppError('Forbidden: Access to this booking is denied', 403, 'FORBIDDEN');
+          throw new ApiError(403, 'Forbidden: Access to this booking is denied', [], 'FORBIDDEN');
         }
 
         if (booking.status === BookingStatus.CONFIRMED) {
-          throw new AppError('This booking has already been confirmed', 400, 'ALREADY_CONFIRMED');
+          throw new ApiError(400, 'This booking has already been confirmed', [], 'ALREADY_CONFIRMED');
         }
 
-        // Check if hold has expired
         if (booking.holdExpiresAt <= now || booking.status === BookingStatus.EXPIRED) {
-          // Clean up expired hold
           await tx.booking.update({
             where: { id: bookingId },
             data: { status: BookingStatus.EXPIRED },
@@ -182,12 +166,10 @@ export class BookingService {
             },
           });
 
-          throw new AppError('Seat hold has expired. Please select seats again.', 410, 'HOLD_EXPIRED');
+          throw new ApiError(410, 'Seat hold has expired. Please select seats again.', [], 'HOLD_EXPIRED');
         }
 
-        // Payment Simulation: FAILURE
         if (paymentStatus === 'FAILED') {
-          // Record failed payment record or update existing
           if (booking.payment) {
             await tx.payment.update({
               where: { id: booking.payment.id },
@@ -215,8 +197,6 @@ export class BookingService {
           };
         }
 
-        // Payment Simulation: SUCCESS
-        // Record payment success
         if (booking.payment) {
           await tx.payment.update({
             where: { id: booking.payment.id },
@@ -236,13 +216,11 @@ export class BookingService {
           });
         }
 
-        // Confirm booking
         const confirmedBooking = await tx.booking.update({
           where: { id: booking.id },
           data: { status: BookingStatus.CONFIRMED },
         });
 
-        // Clear heldUntil so seat is permanently booked under bookingId
         await tx.showSeat.updateMany({
           where: { bookingId: booking.id },
           data: { heldUntil: null },
@@ -264,9 +242,6 @@ export class BookingService {
     );
   }
 
-  /**
-   * Releases an active hold voluntarily before the 5-minute timer expires.
-   */
   static async releaseHold(bookingId: string, userId: string) {
     return await prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({
@@ -274,15 +249,15 @@ export class BookingService {
       });
 
       if (!booking) {
-        throw new AppError('Booking not found', 404, 'BOOKING_NOT_FOUND');
+        throw new ApiError(404, 'Booking not found', [], 'BOOKING_NOT_FOUND');
       }
 
       if (booking.userId !== userId) {
-        throw new AppError('Forbidden: Access denied', 403, 'FORBIDDEN');
+        throw new ApiError(403, 'Forbidden: Access denied', [], 'FORBIDDEN');
       }
 
       if (booking.status === BookingStatus.CONFIRMED) {
-        throw new AppError('Cannot release a confirmed booking', 400, 'ALREADY_CONFIRMED');
+        throw new ApiError(400, 'Cannot release a confirmed booking', [], 'ALREADY_CONFIRMED');
       }
 
       await tx.booking.update({
@@ -303,9 +278,6 @@ export class BookingService {
     });
   }
 
-  /**
-   * Fetches only the bookings belonging to the requesting user.
-   */
   static async getUserBookings(userId: string) {
     const bookings = await prisma.booking.findMany({
       where: { userId },

@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/db';
-import { asyncHandler, AppError } from '../utils/asyncHandler';
+import { asyncHandler } from '../utils/asyncHandler';
+import { ApiError } from '../utils/ApiError';
+import { ApiResponse } from '../utils/ApiResponse';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 // 15-minute cleaning and buffer period between shows
@@ -18,13 +20,10 @@ export const getShowById = asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (!show) {
-    throw new AppError('Show not found', 404, 'SHOW_NOT_FOUND');
+    throw new ApiError(404, 'Show not found', [], 'SHOW_NOT_FOUND');
   }
 
-  res.json({
-    success: true,
-    data: { show },
-  });
+  res.json(new ApiResponse(200, { show }, 'Show details retrieved successfully'));
 });
 
 export const getShowSeats = asyncHandler<AuthenticatedRequest>(async (req: AuthenticatedRequest, res: Response) => {
@@ -56,7 +55,7 @@ export const getShowSeats = asyncHandler<AuthenticatedRequest>(async (req: Authe
   });
 
   if (!show) {
-    throw new AppError('Show not found', 404, 'SHOW_NOT_FOUND');
+    throw new ApiError(404, 'Show not found', [], 'SHOW_NOT_FOUND');
   }
 
   const seats = show.showSeats.map((item) => {
@@ -84,20 +83,23 @@ export const getShowSeats = asyncHandler<AuthenticatedRequest>(async (req: Authe
     };
   });
 
-  res.json({
-    success: true,
-    data: {
-      show: {
-        id: show.id,
-        movieId: show.movieId,
-        movieTitle: show.movie.title,
-        startTime: show.startTime,
-        endTime: show.endTime,
-        price: show.price,
+  res.json(
+    new ApiResponse(
+      200,
+      {
+        show: {
+          id: show.id,
+          movieId: show.movieId,
+          movieTitle: show.movie.title,
+          startTime: show.startTime,
+          endTime: show.endTime,
+          price: show.price,
+        },
+        seats,
       },
-      seats,
-    },
-  });
+      'Seats retrieved successfully'
+    )
+  );
 });
 
 export const createShow = asyncHandler(async (req: Request, res: Response) => {
@@ -108,7 +110,7 @@ export const createShow = asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (!movie || !movie.isActive) {
-    throw new AppError('Active movie not found', 404, 'MOVIE_NOT_FOUND');
+    throw new ApiError(404, 'Active movie not found', [], 'MOVIE_NOT_FOUND');
   }
 
   const screen = await prisma.screen.findUnique({
@@ -119,7 +121,7 @@ export const createShow = asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (!screen) {
-    throw new AppError('Screen not found', 404, 'SCREEN_NOT_FOUND');
+    throw new ApiError(404, 'Screen not found', [], 'SCREEN_NOT_FOUND');
   }
 
   const startDateTime = new Date(startTime);
@@ -127,7 +129,6 @@ export const createShow = asyncHandler(async (req: Request, res: Response) => {
   const endDateTime = new Date(startDateTime.getTime() + totalDurationMinutes * 60000);
 
   // Overlap Detection on the same screen:
-  // Existing show overlaps if: existing.startTime < new.endTime AND existing.endTime > new.startTime
   const overlappingShow = await prisma.show.findFirst({
     where: {
       screenId,
@@ -146,9 +147,10 @@ export const createShow = asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (overlappingShow) {
-    throw new AppError(
-      `Show overlaps with existing show for '${overlappingShow.movie.title}' from ${overlappingShow.startTime.toISOString()} to ${overlappingShow.endTime.toISOString()}`,
+    throw new ApiError(
       409,
+      `Show overlaps with existing show for '${overlappingShow.movie.title}' from ${overlappingShow.startTime.toISOString()} to ${overlappingShow.endTime.toISOString()}`,
+      [],
       'SHOW_SCHEDULE_CONFLICT'
     );
   }
@@ -175,10 +177,7 @@ export const createShow = asyncHandler(async (req: Request, res: Response) => {
     return show;
   });
 
-  res.status(201).json({
-    success: true,
-    data: { show: createdShow },
-  });
+  res.status(201).json(new ApiResponse(201, { show: createdShow }, 'Show created successfully with 80 seats'));
 });
 
 export const getShowOccupancy = asyncHandler(async (req: Request, res: Response) => {
@@ -198,7 +197,7 @@ export const getShowOccupancy = asyncHandler(async (req: Request, res: Response)
   });
 
   if (!show) {
-    throw new AppError('Show not found', 404, 'SHOW_NOT_FOUND');
+    throw new ApiError(404, 'Show not found', [], 'SHOW_NOT_FOUND');
   }
 
   let bookedCount = 0;
@@ -219,20 +218,23 @@ export const getShowOccupancy = asyncHandler(async (req: Request, res: Response)
   const occupancyRate = totalSeats > 0 ? ((bookedCount / totalSeats) * 100).toFixed(1) + '%' : '0%';
   const totalRevenue = Number(show.price) * bookedCount;
 
-  res.json({
-    success: true,
-    data: {
-      showId: show.id,
-      movieTitle: show.movie.title,
-      startTime: show.startTime,
-      endTime: show.endTime,
-      ticketPrice: show.price,
-      totalSeats,
-      bookedCount,
-      heldCount,
-      availableCount,
-      occupancyRate,
-      totalRevenue,
-    },
-  });
+  res.json(
+    new ApiResponse(
+      200,
+      {
+        showId: show.id,
+        movieTitle: show.movie.title,
+        startTime: show.startTime,
+        endTime: show.endTime,
+        ticketPrice: show.price,
+        totalSeats,
+        bookedCount,
+        heldCount,
+        availableCount,
+        occupancyRate,
+        totalRevenue,
+      },
+      'Occupancy report generated successfully'
+    )
+  );
 });

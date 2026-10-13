@@ -3,7 +3,9 @@ import bcrypt from 'bcrypt';
 import { Role } from '@prisma/client';
 import prisma from '../utils/db';
 import { signToken } from '../utils/jwt';
-import { asyncHandler, AppError } from '../utils/asyncHandler';
+import { asyncHandler } from '../utils/asyncHandler';
+import { ApiError } from '../utils/ApiError';
+import { ApiResponse } from '../utils/ApiResponse';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
@@ -14,7 +16,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (existingUser) {
-    throw new AppError('An account with this email already exists', 409, 'EMAIL_ALREADY_EXISTS');
+    throw new ApiError(409, 'An account with this email already exists', [], 'EMAIL_ALREADY_EXISTS');
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
@@ -42,13 +44,9 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     role: user.role,
   });
 
-  res.status(201).json({
-    success: true,
-    data: {
-      user,
-      token,
-    },
-  });
+  res.status(201).json(
+    new ApiResponse(201, { user, token }, 'User registered successfully')
+  );
 });
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
@@ -59,12 +57,12 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   });
 
   if (!user) {
-    throw new AppError('Invalid email or password', 401, 'INVALID_CREDENTIALS');
+    throw new ApiError(401, 'Invalid email or password', [], 'INVALID_CREDENTIALS');
   }
 
   const isMatch = await bcrypt.compare(password, user.passwordHash);
   if (!isMatch) {
-    throw new AppError('Invalid email or password', 401, 'INVALID_CREDENTIALS');
+    throw new ApiError(401, 'Invalid email or password', [], 'INVALID_CREDENTIALS');
   }
 
   const token = signToken({
@@ -73,19 +71,22 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     role: user.role,
   });
 
-  res.json({
-    success: true,
-    data: {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        createdAt: user.createdAt,
+  res.json(
+    new ApiResponse(
+      200,
+      {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          createdAt: user.createdAt,
+        },
+        token,
       },
-      token,
-    },
-  });
+      'User logged in successfully'
+    )
+  );
 });
 
 export const getMe = asyncHandler<AuthenticatedRequest>(async (req: AuthenticatedRequest, res: Response) => {
@@ -101,11 +102,8 @@ export const getMe = asyncHandler<AuthenticatedRequest>(async (req: Authenticate
   });
 
   if (!user) {
-    throw new AppError('User profile not found', 404, 'USER_NOT_FOUND');
+    throw new ApiError(404, 'User profile not found', [], 'USER_NOT_FOUND');
   }
 
-  res.json({
-    success: true,
-    data: { user },
-  });
+  res.json(new ApiResponse(200, { user }, 'Profile retrieved successfully'));
 });

@@ -1,7 +1,8 @@
 import { Response } from 'express';
 import { BookingService } from '../services/booking.service';
 import { AuthenticatedRequest } from '../middlewares/auth.middleware';
-import { asyncHandler, AppError } from '../utils/asyncHandler';
+import { asyncHandler } from '../utils/asyncHandler';
+import { ApiResponse } from '../utils/ApiResponse';
 
 export const holdSeats = asyncHandler<AuthenticatedRequest>(async (req: AuthenticatedRequest, res: Response) => {
   const { id: showId } = req.params;
@@ -14,10 +15,9 @@ export const holdSeats = asyncHandler<AuthenticatedRequest>(async (req: Authenti
     seatIds,
   });
 
-  res.status(201).json({
-    success: true,
-    data: result,
-  });
+  res.status(201).json(
+    new ApiResponse(201, result, 'Seats held successfully for 5 minutes')
+  );
 });
 
 export const simulatePayment = asyncHandler<AuthenticatedRequest>(async (req: AuthenticatedRequest, res: Response) => {
@@ -31,10 +31,7 @@ export const simulatePayment = asyncHandler<AuthenticatedRequest>(async (req: Au
     paymentStatus,
   });
 
-  res.json({
-    success: true,
-    data: result,
-  });
+  res.json(new ApiResponse(200, result, 'Payment simulation completed'));
 });
 
 export const releaseHold = asyncHandler<AuthenticatedRequest>(async (req: AuthenticatedRequest, res: Response) => {
@@ -43,10 +40,7 @@ export const releaseHold = asyncHandler<AuthenticatedRequest>(async (req: Authen
 
   const result = await BookingService.releaseHold(bookingId, userId);
 
-  res.json({
-    success: true,
-    data: result,
-  });
+  res.json(new ApiResponse(200, result, 'Seat hold released successfully'));
 });
 
 export const getMyBookings = asyncHandler<AuthenticatedRequest>(async (req: AuthenticatedRequest, res: Response) => {
@@ -54,8 +48,5 @@ export const getMyBookings = asyncHandler<AuthenticatedRequest>(async (req: Auth
 
   const bookings = await BookingService.getUserBookings(userId);
 
-  res.json({
-    success: true,
-    data: { bookings },
-  });
+  res.json(new ApiResponse(200, { bookings }, 'User bookings retrieved successfully'));
 });
