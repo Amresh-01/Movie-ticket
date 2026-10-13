@@ -91,18 +91,24 @@ async function main() {
       title: 'Inception',
       description: 'A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea.',
       durationMin: 148,
+      language: 'English',
+      rating: 'UA',
       posterUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800',
     },
     {
       title: 'Interstellar',
       description: 'When Earth becomes uninhabitable in the future, a farmer and ex-NASA pilot is tasked to pilot a spacecraft along with a team of researchers.',
       durationMin: 169,
+      language: 'English',
+      rating: 'UA',
       posterUrl: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=800',
     },
     {
       title: 'The Dark Knight',
       description: 'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological tests.',
       durationMin: 152,
+      language: 'English',
+      rating: 'A',
       posterUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800',
     },
   ];
@@ -116,6 +122,8 @@ async function main() {
         title: m.title,
         description: m.description,
         durationMin: m.durationMin,
+        language: m.language,
+        rating: m.rating,
         posterUrl: m.posterUrl,
       },
     }).catch(async () => {

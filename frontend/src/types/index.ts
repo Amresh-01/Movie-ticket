@@ -14,6 +14,8 @@ export interface ShowBrief {
   startTime: string;
   endTime: string;
   price: string | number;
+  availableSeatsCount?: number;
+  totalSeats?: number;
 }
 
 export interface Movie {
@@ -21,6 +23,8 @@ export interface Movie {
   title: string;
   description: string;
   durationMin: number;
+  language?: string;
+  rating?: string;
   posterUrl?: string | null;
   isActive: boolean;
   shows?: ShowBrief[];

@@ -6,13 +6,22 @@ import { ApiResponse } from '../utils/ApiResponse';
 import { uploadBufferOnCloudinary } from '../utils/cloudinary';
 
 export const getMovies = asyncHandler(async (req: Request, res: Response) => {
+  const now = new Date();
   const movies = await prisma.movie.findMany({
     where: { isActive: true },
     include: {
       shows: {
         where: {
           startTime: {
-            gte: new Date(),
+            gte: now,
+          },
+        },
+        include: {
+          showSeats: {
+            select: {
+              bookingId: true,
+              heldUntil: true,
+            },
           },
         },
         orderBy: {
@@ -25,11 +34,30 @@ export const getMovies = asyncHandler(async (req: Request, res: Response) => {
     },
   });
 
-  res.json(new ApiResponse(200, { movies }, 'Movies retrieved successfully'));
+  const formattedMovies = movies.map((movie) => ({
+    ...movie,
+    shows: movie.shows.map((show) => {
+      const availableSeatsCount = show.showSeats.filter((seat) => {
+        const isBooked = seat.bookingId !== null;
+        const isHeld = seat.heldUntil && seat.heldUntil > now;
+        return !isBooked && !isHeld;
+      }).length;
+
+      const { showSeats, ...showRest } = show;
+      return {
+        ...showRest,
+        availableSeatsCount,
+        totalSeats: show.showSeats.length,
+      };
+    }),
+  }));
+
+  res.json(new ApiResponse(200, { movies: formattedMovies }, 'Movies retrieved successfully'));
 });
 
 export const getMovieById = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
+  const now = new Date();
 
   const movie = await prisma.movie.findUnique({
     where: { id },
@@ -37,7 +65,15 @@ export const getMovieById = asyncHandler(async (req: Request, res: Response) => 
       shows: {
         where: {
           startTime: {
-            gte: new Date(),
+            gte: now,
+          },
+        },
+        include: {
+          showSeats: {
+            select: {
+              bookingId: true,
+              heldUntil: true,
+            },
           },
         },
         orderBy: {
@@ -51,11 +87,29 @@ export const getMovieById = asyncHandler(async (req: Request, res: Response) => 
     throw new ApiError(404, 'Movie not found', [], 'MOVIE_NOT_FOUND');
   }
 
-  res.json(new ApiResponse(200, { movie }, 'Movie retrieved successfully'));
+  const formattedMovie = {
+    ...movie,
+    shows: movie.shows.map((show) => {
+      const availableSeatsCount = show.showSeats.filter((seat) => {
+        const isBooked = seat.bookingId !== null;
+        const isHeld = seat.heldUntil && seat.heldUntil > now;
+        return !isBooked && !isHeld;
+      }).length;
+
+      const { showSeats, ...showRest } = show;
+      return {
+        ...showRest,
+        availableSeatsCount,
+        totalSeats: show.showSeats.length,
+      };
+    }),
+  };
+
+  res.json(new ApiResponse(200, { movie: formattedMovie }, 'Movie retrieved successfully'));
 });
 
 export const createMovie = asyncHandler(async (req: Request, res: Response) => {
-  const { title, description, durationMin, posterUrl } = req.body;
+  const { title, description, durationMin, posterUrl, language, rating } = req.body;
   let finalPosterUrl = posterUrl || null;
 
   // If a file was uploaded via multipart/form-data, upload to Cloudinary
@@ -71,6 +125,8 @@ export const createMovie = asyncHandler(async (req: Request, res: Response) => {
       title,
       description,
       durationMin: typeof durationMin === 'string' ? parseInt(durationMin, 10) : durationMin,
+      language: language || 'English',
+      rating: rating || 'UA',
       posterUrl: finalPosterUrl,
     },
   });
@@ -80,7 +136,7 @@ export const createMovie = asyncHandler(async (req: Request, res: Response) => {
 
 export const updateMovie = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { title, description, durationMin, posterUrl, isActive } = req.body;
+  const { title, description, durationMin, posterUrl, language, rating, isActive } = req.body;
 
   const existingMovie = await prisma.movie.findUnique({
     where: { id },
@@ -106,6 +162,8 @@ export const updateMovie = asyncHandler(async (req: Request, res: Response) => {
       ...(durationMin !== undefined && {
         durationMin: typeof durationMin === 'string' ? parseInt(durationMin, 10) : durationMin,
       }),
+      ...(language !== undefined && { language }),
+      ...(rating !== undefined && { rating }),
       ...(finalPosterUrl !== undefined && { posterUrl: finalPosterUrl || null }),
       ...(isActive !== undefined && {
         isActive: typeof isActive === 'string' ? isActive === 'true' : isActive,

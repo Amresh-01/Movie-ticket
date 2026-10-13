@@ -21,7 +21,6 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  // Enforce CUSTOMER role - admin can only be seeded
   const user = await prisma.user.create({
     data: {
       name,

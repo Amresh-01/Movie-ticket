@@ -118,6 +118,28 @@ export const MovieListPage: React.FC<MovieListPageProps> = ({ onSelectShow }) =>
                     >
                       {movie.durationMin} mins
                     </span>
+                    <span
+                      style={{
+                        background: 'rgba(236, 72, 153, 0.85)',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                      }}
+                    >
+                      {movie.rating || 'UA'}
+                    </span>
+                    <span
+                      style={{
+                        background: 'rgba(16, 185, 129, 0.85)',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                      }}
+                    >
+                      {movie.language || 'English'}
+                    </span>
                   </div>
                   <h3 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{movie.title}</h3>
                 </div>
@@ -154,21 +176,27 @@ export const MovieListPage: React.FC<MovieListPageProps> = ({ onSelectShow }) =>
                           onClick={() => onSelectShow(show.id)}
                           className="btn btn-outline"
                           style={{
-                            padding: '6px 12px',
+                            padding: '8px 12px',
                             fontSize: '0.8rem',
                             display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
+                            flexDirection: 'column',
+                            alignItems: 'flex-start',
+                            gap: '4px',
                             background: 'rgba(99, 102, 241, 0.1)',
                             borderColor: 'rgba(99, 102, 241, 0.3)',
                           }}
                         >
-                          <Clock size={12} />
-                          <span>
-                            {formatShowDate(show.startTime)} {formatShowTime(show.startTime)}
-                          </span>
-                          <span style={{ color: '#10b981', fontWeight: 700 }}>${Number(show.price).toFixed(2)}</span>
-                          <ChevronRight size={12} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
+                            <Clock size={12} />
+                            <span>
+                              {formatShowDate(show.startTime)} {formatShowTime(show.startTime)}
+                            </span>
+                            <span style={{ color: '#10b981', fontWeight: 700, marginLeft: 'auto' }}>${Number(show.price).toFixed(2)}</span>
+                            <ChevronRight size={12} />
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: '#38bdf8', fontWeight: 600 }}>
+                            {show.availableSeatsCount !== undefined ? `${show.availableSeatsCount} / 80 seats free` : '80 seats'}
+                          </div>
                         </button>
                       ))}
                     </div>

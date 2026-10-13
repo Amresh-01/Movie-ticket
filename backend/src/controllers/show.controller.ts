@@ -238,3 +238,37 @@ export const getShowOccupancy = asyncHandler(async (req: Request, res: Response)
     )
   );
 });
+
+export const deleteShow = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const show = await prisma.show.findUnique({
+    where: { id },
+    include: {
+      bookings: {
+        where: {
+          status: 'CONFIRMED',
+        },
+      },
+    },
+  });
+
+  if (!show) {
+    throw new ApiError(404, 'Show not found', [], 'SHOW_NOT_FOUND');
+  }
+
+  if (show.bookings.length > 0) {
+    throw new ApiError(
+      400,
+      'A show that already has confirmed bookings cannot be deleted',
+      [],
+      'SHOW_HAS_CONFIRMED_BOOKINGS'
+    );
+  }
+
+  await prisma.show.delete({
+    where: { id },
+  });
+
+  res.json(new ApiResponse(200, { message: 'Show deleted successfully' }, 'Show deleted successfully'));
+});

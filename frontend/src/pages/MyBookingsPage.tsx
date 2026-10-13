@@ -123,14 +123,41 @@ export const MyBookingsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Total Paid / Due</span>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc' }}>
-                  ${Number(booking.totalAmount).toFixed(2)}
+              <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Total Paid / Due</span>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc' }}>
+                    ${Number(booking.totalAmount).toFixed(2)}
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    Ref: {booking.id.slice(0, 8)}...
+                  </span>
                 </div>
-                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                  Ref: {booking.id.slice(0, 8)}...
-                </span>
+
+                {booking.status === 'CONFIRMED' && (
+                  <button
+                    onClick={async () => {
+                      if (confirm('Are you sure you want to cancel this booking? (Allowed up to 2 hours before showtime)')) {
+                        const res = await apiRequest(`/bookings/${booking.id}/cancel`, { method: 'POST' });
+                        if (res.success) {
+                          alert('Booking cancelled successfully.');
+                          fetchBookings();
+                        } else {
+                          alert(res.error?.message || 'Could not cancel booking.');
+                        }
+                      }
+                    }}
+                    className="btn btn-outline"
+                    style={{
+                      fontSize: '0.75rem',
+                      padding: '4px 10px',
+                      color: '#f87171',
+                      borderColor: 'rgba(239, 68, 68, 0.4)',
+                    }}
+                  >
+                    Cancel Booking
+                  </button>
+                )}
               </div>
             </div>
           ))}

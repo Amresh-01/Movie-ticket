@@ -278,7 +278,67 @@ export class BookingService {
     });
   }
 
+  static async cancelBooking(bookingId: string, userId: string) {
+    return await prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const booking = await tx.booking.findUnique({
+        where: { id: bookingId },
+        include: {
+          show: true,
+          seats: true,
+        },
+      });
+
+      if (!booking) {
+        throw new ApiError(404, 'Booking not found', [], 'BOOKING_NOT_FOUND');
+      }
+
+      if (booking.userId !== userId) {
+        throw new ApiError(403, 'Forbidden: Access denied', [], 'FORBIDDEN');
+      }
+
+      if (booking.status !== BookingStatus.CONFIRMED) {
+        throw new ApiError(400, 'Only confirmed bookings can be cancelled', [], 'INVALID_BOOKING_STATUS');
+      }
+
+      // Check if show is in the past
+      if (booking.show.startTime <= now) {
+        throw new ApiError(400, 'Cannot cancel a booking for a show that has already started or completed', [], 'SHOW_PAST');
+      }
+
+      // Enforce 2-hour cancellation rule
+      const timeDifferenceMs = booking.show.startTime.getTime() - now.getTime();
+      const twoHoursMs = 2 * 60 * 60 * 1000;
+      if (timeDifferenceMs < twoHoursMs) {
+        throw new ApiError(400, 'Bookings can only be cancelled up to 2 hours before showtime', [], 'CANCELLATION_DEADLINE_PASSED');
+      }
+
+      // Mark booking as CANCELLED
+      const updatedBooking = await tx.booking.update({
+        where: { id: bookingId },
+        data: { status: BookingStatus.CANCELLED },
+      });
+
+      // Free seats immediately
+      await tx.showSeat.updateMany({
+        where: { bookingId },
+        data: {
+          heldByUserId: null,
+          heldUntil: null,
+          bookingId: null,
+        },
+      });
+
+      return {
+        bookingId: updatedBooking.id,
+        status: 'CANCELLED',
+        message: 'Booking successfully cancelled. Seats have been made available immediately.',
+      };
+    });
+  }
+
   static async getUserBookings(userId: string) {
+    const now = new Date();
     const bookings = await prisma.booking.findMany({
       where: { userId },
       include: {
@@ -295,10 +355,17 @@ export class BookingService {
         },
         payment: true,
       },
-      orderBy: { createdAt: 'desc' },
     });
 
-    return bookings.map((b) => ({
+    const upcoming = bookings.filter((b) => new Date(b.show.startTime) >= now);
+    const past = bookings.filter((b) => new Date(b.show.startTime) < now);
+
+    upcoming.sort((a, b) => new Date(a.show.startTime).getTime() - new Date(b.show.startTime).getTime());
+    past.sort((a, b) => new Date(b.show.startTime).getTime() - new Date(a.show.startTime).getTime());
+
+    const sorted = [...upcoming, ...past];
+
+    return sorted.map((b) => ({
       id: b.id,
       movieTitle: b.show.movie.title,
       screenName: b.show.screen.name,
@@ -309,6 +376,9 @@ export class BookingService {
       seats: b.seats.map((s) => `${s.seat.row}${s.seat.number}`),
       paymentStatus: b.payment?.status || 'NONE',
       createdAt: b.createdAt,
+      canCancel:
+        b.status === BookingStatus.CONFIRMED &&
+        new Date(b.show.startTime).getTime() - now.getTime() >= 2 * 60 * 60 * 1000,
     }));
   }
 }

@@ -50,3 +50,12 @@ export const getMyBookings = asyncHandler<AuthenticatedRequest>(async (req: Auth
 
   res.json(new ApiResponse(200, { bookings }, 'User bookings retrieved successfully'));
 });
+
+export const cancelBooking = asyncHandler<AuthenticatedRequest>(async (req: AuthenticatedRequest, res: Response) => {
+  const { id: bookingId } = req.params;
+  const userId = req.user!.userId;
+
+  const result = await BookingService.cancelBooking(bookingId, userId);
+
+  res.json(new ApiResponse(200, result, 'Booking cancelled successfully'));
+});

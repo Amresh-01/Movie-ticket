@@ -44,6 +44,8 @@ model Movie {
   title       String
   description String
   durationMin Int
+  language    String   @default("English")
+  rating      String   @default("UA") // U, UA, A
   posterUrl   String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
