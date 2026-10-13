@@ -2,11 +2,19 @@ import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import fs from 'fs';
 import { config } from '../config/env';
 
-cloudinary.config({
-  cloud_name: config.cloudinaryCloudName,
-  api_key: config.cloudinaryApiKey,
-  api_secret: config.cloudinaryApiSecret,
-});
+// If CLOUDINARY_URL is present, cloudinary automatically parses it,
+// otherwise falls back to explicit cloud_name, api_key, api_secret
+if (config.cloudinaryUrl) {
+  cloudinary.config({
+    cloudinary_url: config.cloudinaryUrl,
+  });
+} else {
+  cloudinary.config({
+    cloud_name: config.cloudinaryCloudName,
+    api_key: config.cloudinaryApiKey,
+    api_secret: config.cloudinaryApiSecret,
+  });
+}
 
 export const uploadOnCloudinary = async (
   localFilePath: string,
@@ -15,20 +23,17 @@ export const uploadOnCloudinary = async (
   try {
     if (!localFilePath) return null;
 
-    // Upload to Cloudinary
     const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: 'image',
       folder,
     });
 
-    // Remove file locally after successful upload
     if (fs.existsSync(localFilePath)) {
       fs.unlinkSync(localFilePath);
     }
 
     return response;
   } catch (error) {
-    // Clean up local temp file on failure
     if (fs.existsSync(localFilePath)) {
       fs.unlinkSync(localFilePath);
     }

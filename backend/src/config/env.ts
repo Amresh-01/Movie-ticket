@@ -7,6 +7,7 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h',
   databaseUrl: process.env.DATABASE_URL || '',
   nodeEnv: process.env.NODE_ENV || 'development',
+  cloudinaryUrl: process.env.CLOUDINARY_URL || '',
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || '',
