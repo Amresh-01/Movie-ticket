@@ -1,0 +1,138 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  name         String
+  role         Role          @default(CUSTOMER)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  bookings     Booking[]
+
+  @@index([email])
+}
+
+model Movie {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  durationMin Int
+  posterUrl   String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  shows       Show[]
+}
+
+model Screen {
+  id        String   @id @default(uuid())
+  name      String   @default("Screen 1")
+  seats     Seat[]
+  shows     Show[]
+}
+
+model Seat {
+  id         String      @id @default(uuid())
+  screenId   String
+  screen     Screen      @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  row        String      // 'A' to 'H'
+  number     Int         // 1 to 10
+  showSeats  ShowSeat[]
+
+  @@unique([screenId, row, number])
+  @@index([screenId])
+}
+
+model Show {
+  id         String      @id @default(uuid())
+  movieId    String
+  movie      Movie       @relation(fields: [movieId], references: [id], onDelete: Restrict)
+  screenId   String
+  screen     Screen      @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  startTime  DateTime
+  endTime    DateTime
+  price      Decimal     @db.Decimal(10, 2)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  showSeats  ShowSeat[]
+  bookings   Booking[]
+
+  @@index([screenId, startTime, endTime])
+}
+
+model ShowSeat {
+  id           String       @id @default(uuid())
+  showId       String
+  show         Show         @relation(fields: [showId], references: [id], onDelete: Cascade)
+  seatId       String
+  seat         Seat         @relation(fields: [seatId], references: [id], onDelete: Restrict)
+  
+  heldByUserId String?
+  heldUntil    DateTime?
+  
+  bookingId    String?
+  booking      Booking?     @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  version      Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([showId, seatId])
+  @@index([showId, heldUntil])
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  showId        String
+  show          Show          @relation(fields: [showId], references: [id], onDelete: Restrict)
+  totalAmount   Decimal       @db.Decimal(10, 2)
+  status        BookingStatus @default(PENDING)
+  holdExpiresAt DateTime
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  seats         ShowSeat[]
+  payment       Payment?
+
+  @@index([userId])
+  @@index([showId])
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  bookingId      String        @unique
+  booking        Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount         Decimal       @db.Decimal(10, 2)
+  status         PaymentStatus @default(PENDING)
+  transactionRef String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
