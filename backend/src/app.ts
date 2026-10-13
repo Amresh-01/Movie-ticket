@@ -3,6 +3,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth.routes';
 import movieRoutes from './routes/movie.routes';
 import showRoutes from './routes/show.routes';
+import bookingRoutes from './routes/booking.routes';
 import { AppError } from './utils/asyncHandler';
 
 export const createApp = () => {
@@ -26,6 +27,7 @@ export const createApp = () => {
   app.use('/api/auth', authRoutes);
   app.use('/api/movies', movieRoutes);
   app.use('/api/shows', showRoutes);
+  app.use('/api', bookingRoutes);
 
   // Centralized Error Handler
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {

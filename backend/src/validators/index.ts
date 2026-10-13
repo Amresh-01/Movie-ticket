@@ -26,3 +26,16 @@ export const createShowSchema = z.object({
   startTime: z.string().datetime('startTime must be an ISO 8601 date string'),
   price: z.number().positive('Price must be greater than zero'),
 });
+
+export const holdSeatsSchema = z.object({
+  seatIds: z
+    .array(z.string().uuid('Each seatId must be a valid UUID'))
+    .min(1, 'Must select at least 1 seat')
+    .max(6, 'Cannot select more than 6 seats in a single booking'),
+});
+
+export const simulatePaymentSchema = z.object({
+  status: z.enum(['SUCCESS', 'FAILED'], {
+    errorMap: () => ({ message: "Status must be either 'SUCCESS' or 'FAILED'" }),
+  }),
+});
