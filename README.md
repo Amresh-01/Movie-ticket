@@ -204,3 +204,28 @@ Movie-Ticket/
 1. **Serverless & Edge Alignment**: Modern cinema backends frequently deploy on serverless platforms (e.g. Vercel, Neon, AWS Lambda). Persistent WebSocket servers introduce stateful connection complexity, heartbeat synchronization, and reconnection storms on mobile networks.
 2. **5-Minute Hold Lifecycle**: Because seat holds last 300 seconds, an adaptive **3-second polling interval** ensures that seat changes propagate across users almost instantaneously with negligible bandwidth overhead.
 3. **Resilience & Proxy Traversal**: Short HTTP polling works universally across all corporate firewalls, mobile proxies, and browser sleep modes without connection drops.
+
+---
+
+## 💡 Key Architectural Decisions (Why We Built It This Way)
+
+1. **Why Node.js + Express + TypeScript**: Provides end-to-end type safety shared with React/TypeScript frontend, non-blocking I/O ideal for high-throughput booking traffic, and mature middleware support.
+2. **Why Neon PostgreSQL with Prisma**: A relational database is mandatory for ACID guarantees; PostgreSQL provides row-level locking primitives (`SELECT ... FOR UPDATE`), serializable transactions, and strict foreign keys.
+3. **How We Stopped Double Booking**: Multi-seat holds use PostgreSQL pessimistic row locks on `ShowSeat` within an interactive transaction. All `seatIds` are deterministically sorted alphabetically (`seatIds.sort()`) prior to acquiring locks, eliminating deadlock risk between competing concurrent transactions.
+4. **Why 5-Minute TTL & Idempotency**: Expired holds reject payment confirmation immediately at the database level even before garbage collection runs. Payment retry preserves remaining hold seconds so legitimate buyers don't lose their seats on card errors.
+5. **Why Three.js / React Three Fiber for 3D Simulator**: Renders real-time seated vantage sightlines at 60 FPS directly in the browser canvas without streaming lag or external rendering server costs.
+
+---
+
+## 🗄️ Database Design (Tables & Relations)
+
+| Table | Columns | Constraints & Indexes | Relations |
+|---|---|---|---|
+| **`User`** | `id` (UUID), `email`, `passwordHash`, `name`, `role` (`CUSTOMER`/`ADMIN`), `createdAt`, `updatedAt` | `UNIQUE(email)`, `INDEX(email)` | `1:N` with `Booking` |
+| **`Screen`** | `id` (UUID), `name` ("Screen 1"), `totalSeats` (80), `createdAt` | `UNIQUE(name)` | `1:N` with `Seat`, `1:N` with `Show` |
+| **`Seat`** | `id` (UUID), `screenId`, `row` ('A'-'H'), `number` (1-10) | `UNIQUE(screenId, row, number)`, `INDEX(screenId)` | `N:1` with `Screen`, `1:N` with `ShowSeat` |
+| **`Movie`** | `id` (UUID), `title`, `description`, `durationMin`, `language`, `rating`, `posterUrl`, `isActive`, `createdAt` | `PRIMARY KEY(id)` | `1:N` with `Show` |
+| **`Show`** | `id` (UUID), `movieId`, `screenId`, `startTime`, `endTime`, `price`, `createdAt`, `updatedAt` | `INDEX(screenId, startTime, endTime)` | `N:1` with `Movie`, `N:1` with `Screen`, `1:N` with `ShowSeat`, `1:N` with `Booking` |
+| **`ShowSeat`** | `id` (UUID), `showId`, `seatId`, `heldByUserId`, `heldUntil`, `bookingId`, `version`, `createdAt`, `updatedAt` | `UNIQUE(showId, seatId)`, `INDEX(showId, heldUntil)` | `N:1` with `Show`, `N:1` with `Seat`, `N:1` with `Booking` |
+| **`Booking`** | `id` (UUID), `userId`, `showId`, `totalAmount`, `status` (`PENDING`/`CONFIRMED`/`CANCELLED`/`EXPIRED`), `holdExpiresAt`, `createdAt`, `updatedAt` | `INDEX(userId)`, `INDEX(showId)` | `N:1` with `User`, `N:1` with `Show`, `1:N` with `ShowSeat`, `1:1` with `Payment` |
+| **`Payment`** | `id` (UUID), `bookingId`, `amount`, `status` (`PENDING`/`SUCCESS`/`FAILED`), `transactionRef`, `createdAt`, `updatedAt` | `UNIQUE(bookingId)` | `1:1` with `Booking` |
