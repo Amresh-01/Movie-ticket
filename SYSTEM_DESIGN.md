@@ -7,6 +7,11 @@
 
 ---
 
+
+<img width="1536" height="2455" alt="both" src="https://github.com/user-attachments/assets/26b1c052-face-40bd-a930-d9e8b23f7c15" />
+
+
+
 ## 1. Executive Summary
 
 **Yozigo** is an enterprise-grade movie ticketing platform built for extreme concurrency, zero double-booking tolerance, and visual excellence. In addition to full transactional seat reservation workflows, Yozigo introduces a **realistic 3D cinema auditorium simulator** powered by Three.js and React Three Fiber that lets moviegoers preview the movie screen directly from seated eye-level before purchasing.
