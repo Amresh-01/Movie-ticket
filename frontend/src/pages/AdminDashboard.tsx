@@ -314,7 +314,7 @@ export const AdminDashboard: React.FC = () => {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px' }}>
-                Ticket Price ($)
+                Ticket Price (₹)
               </label>
               <input
                 type="number"
@@ -473,7 +473,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
               <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '16px', borderRadius: '12px' }}>
                 <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Total Revenue</span>
-                <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#10b981' }}>${occupancy.totalRevenue.toFixed(2)}</div>
+                <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#10b981' }}>₹{occupancy.totalRevenue.toFixed(2)}</div>
               </div>
             </div>
 
@@ -525,7 +525,7 @@ export const AdminDashboard: React.FC = () => {
                             </div>
                           </td>
                           <td style={{ padding: '10px 12px', fontWeight: 700, color: '#10B981' }}>
-                            ${b.totalAmount.toFixed(2)}
+                            ₹{b.totalAmount.toFixed(2)}
                           </td>
                           <td style={{ padding: '10px 12px', color: '#94A3B8' }}>
                             {new Date(b.bookedAt).toLocaleTimeString([], {

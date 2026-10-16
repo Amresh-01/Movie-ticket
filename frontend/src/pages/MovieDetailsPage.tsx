@@ -255,7 +255,7 @@ export const MovieDetailsPage: React.FC<MovieDetailsPageProps> = ({
                           {startTime}
                         </span>
                         <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#38C98B' }}>
-                          ${Number(show.price).toFixed(2)}
+                          ₹{Number(show.price).toFixed(2)}
                         </span>
                       </div>
                       <div style={{ color: '#94A3B8', fontSize: '0.8rem', display: 'flex', gap: '12px' }}>

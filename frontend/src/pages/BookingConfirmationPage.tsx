@@ -122,7 +122,7 @@ export const BookingConfirmationPage: React.FC<BookingConfirmationPageProps> = (
                 <ShieldCheck size={13} /> PAYMENT
               </div>
               <div style={{ fontSize: '1rem', fontWeight: 700, color: '#38C98B' }}>
-                ${Number(receipt.totalAmount).toFixed(2)} (PAID)
+                ₹{Number(receipt.totalAmount).toFixed(2)} (PAID)
               </div>
             </div>
           </div>

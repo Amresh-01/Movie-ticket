@@ -129,11 +129,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
               <span style={{ color: '#A7ADBC' }}>Tickets ({selectedSeatCount})</span>
-              <span style={{ fontWeight: 600, color: '#F7F8FC' }}>${Number(totalAmount).toFixed(2)}</span>
+              <span style={{ fontWeight: 600, color: '#F7F8FC' }}>₹{Number(totalAmount).toFixed(2)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '0.9rem' }}>
               <span style={{ color: '#A7ADBC' }}>Cinema Booking Fee</span>
-              <span style={{ fontWeight: 600, color: '#F7F8FC' }}>${serviceFee.toFixed(2)}</span>
+              <span style={{ fontWeight: 600, color: '#F7F8FC' }}>₹{serviceFee.toFixed(2)}</span>
             </div>
             <div
               style={{
@@ -145,7 +145,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               }}
             >
               <span style={{ fontWeight: 700, color: '#F7F8FC' }}>Total Amount</span>
-              <span style={{ fontWeight: 900, color: '#38C98B' }}>${grandTotal.toFixed(2)}</span>
+              <span style={{ fontWeight: 900, color: '#38C98B' }}>₹{grandTotal.toFixed(2)}</span>
             </div>
           </div>
 
@@ -162,7 +162,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               style={{ padding: '12px', fontSize: '0.95rem' }}
             >
               <CheckCircle2 size={18} />
-              {processing ? 'Authorizing...' : `Simulate Successful Payment ($${grandTotal.toFixed(2)})`}
+              {processing ? 'Authorizing...' : `Simulate Successful Payment (₹${grandTotal.toFixed(2)})`}
             </button>
 
             <button

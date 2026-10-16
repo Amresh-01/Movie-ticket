@@ -256,7 +256,7 @@ export const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
               {/* Price and ticket button */}
               <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                 <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#38C98B' }}>
-                  ${Number(booking.totalAmount).toFixed(2)}
+                  ₹{Number(booking.totalAmount).toFixed(2)}
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>

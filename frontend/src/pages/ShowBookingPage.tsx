@@ -10,7 +10,6 @@ import { useAuth } from '../context/AuthContext';
 import {
   ChevronLeft,
   Clock,
-  DollarSign,
   Sparkles,
   ShieldAlert,
   Box,
@@ -265,7 +264,7 @@ export const ShowBookingPage: React.FC<ShowBookingPageProps> = ({
               {new Date(show.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <DollarSign size={14} /> ${Number(show.price).toFixed(2)} / seat
+              ₹{Number(show.price).toFixed(2)} / seat
             </span>
           </div>
         </div>
@@ -278,7 +277,7 @@ export const ShowBookingPage: React.FC<ShowBookingPageProps> = ({
               {selectedSeatLabels && ` (${selectedSeatLabels})`}
             </div>
             <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#38C98B' }}>
-              ${(selectedSeatIds.length * Number(show.price)).toFixed(2)}
+              ₹{(selectedSeatIds.length * Number(show.price)).toFixed(2)}
             </div>
           </div>
           <button
