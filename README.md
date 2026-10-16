@@ -198,12 +198,24 @@ Movie-Ticket/
 
 ---
 
-## ⚖️ Concurrency & Real-Time Sync Rationale (README Question)
+## ⚖️ Concurrency & Real-Time Sync Strategy (Requirement 10)
 
-### Why 3-Second Polling Was Chosen Over WebSockets / SSE:
-1. **Serverless & Edge Alignment**: Modern cinema backends frequently deploy on serverless platforms (e.g. Vercel, Neon, AWS Lambda). Persistent WebSocket servers introduce stateful connection complexity, heartbeat synchronization, and reconnection storms on mobile networks.
-2. **5-Minute Hold Lifecycle**: Because seat holds last 300 seconds, an adaptive **3-second polling interval** ensures that seat changes propagate across users almost instantaneously with negligible bandwidth overhead.
-3. **Resilience & Proxy Traversal**: Short HTTP polling works universally across all corporate firewalls, mobile proxies, and browser sleep modes without connection drops.
+### Architectural Comparison: Polling vs. Server-Sent Events (SSE) vs. WebSockets
+
+| Metric / Consideration | Short Polling (Selected) | Server-Sent Events (SSE) | WebSockets (WS) |
+|---|---|---|---|
+| **Communication Flow** | Unidirectional HTTP client pull (`GET /shows/:id/seats`) | Unidirectional HTTP server push (`text/event-stream`) | Full-duplex bidirectional TCP stream |
+| **Connection Overhead** | Stateless HTTP requests (reusable via HTTP/2 keep-alive) | Open persistent HTTP socket per connected user | Persistent TCP connection per connected user |
+| **Edge & Serverless Compatibility** | **100% Compatible** with AWS Lambda, Vercel, Neon, Cloudflare Workers | Restricted connection duration on serverless, requires edge buffering | Requires dedicated, stateful application servers or managed gateways |
+| **Complexity & Reconnection** | Minimal (browser handles retries; no state to recover) | Medium (requires `Last-Event-ID` tracking, auto-reconnect handling) | High (requires heartbeat/ping-pong, backoff reconnects, room/channel state) |
+| **Bandwidth for 80 Seats** | Minimal (~2 KB gzipped JSON per interval) | Minimal event delta (~200 B per delta) | Minimal event delta (~200 B per delta) |
+| **Failure Recovery** | Automatic on next tick (no dead connection states) | Must detect dropped socket and reconnect | Complex reconnect logic and reconnection storms |
+
+### Why 3-Second Polling Was Chosen:
+1. **Serverless & Edge Alignment**: Modern cinema booking systems scale out elastically across stateless serverless instances and edge compute. WebSockets and long-lived SSE connections break standard stateless deployment architectures and require sticky sessions, Redis pub/sub backplanes, or dedicated connection routers.
+2. **5-Minute Hold Lifecycle Matching**: Seat holds last 300 seconds. An adaptive **3-second background polling cadence** guarantees that any seat claimed, released, or purchased by another customer is visible to all viewers within 3 seconds—well below human booking decision thresholds—without burning server memory on idle persistent connections.
+3. **Resilience & Proxy Traversal**: Standard HTTP polling traverses all enterprise firewalls, VPNs, mobile NATs, and mobile browser power-saving sleep modes cleanly without connection drops or socket synchronization issues.
+4. **Client-Side Conflict Auto-Resolution**: When the 3-second poll detects that a seat currently selected by the user has been claimed by another customer, the client automatically deselects the taken seat and updates the UI instantly, preventing stale hold submissions.
 
 ---
 

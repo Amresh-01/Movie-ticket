@@ -74,6 +74,17 @@ export const ShowBookingPage: React.FC<ShowBookingPageProps> = ({
     if (res.success && res.data) {
       setShow(res.data.show);
       setSeats(res.data.seats);
+
+      // If any currently selected seat was held or booked by another user, deselect it
+      setSelectedSeatIds((prevSelected) => {
+        const unavailableIds = new Set(
+          res.data!.seats
+            .filter((s) => s.status !== 'AVAILABLE' && s.status !== 'HELD_BY_YOU')
+            .map((s) => s.seatId)
+        );
+        const filtered = prevSelected.filter((id) => !unavailableIds.has(id));
+        return filtered.length === prevSelected.length ? prevSelected : filtered;
+      });
     } else {
       setErrorMessage(res.error?.message || 'Could not load seating data.');
     }

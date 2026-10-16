@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api/client';
 import type { Movie } from '../types';
-import { ShieldCheck, Plus, Calendar, Film, BarChart3, Trash2, Edit2, X } from 'lucide-react';
+import { ShieldCheck, Plus, Calendar, Film, BarChart3, Trash2, Edit2, X, Lock } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 interface BookingRecord {
   id: string;
@@ -26,6 +27,7 @@ interface OccupancyData {
 }
 
 export const AdminDashboard: React.FC = () => {
+  const { user, loading: authLoading } = useAuth();
   const [movies, setMovies] = useState<Movie[]>([]);
   const [selectedShowId, setSelectedShowId] = useState<string | null>(null);
   const [occupancy, setOccupancy] = useState<OccupancyData | null>(null);
@@ -205,6 +207,43 @@ export const AdminDashboard: React.FC = () => {
       });
     }
   };
+
+  if (authLoading) {
+    return (
+      <div style={{ maxWidth: '1100px', margin: '40px auto', padding: '16px', textAlign: 'center', color: '#94A3B8' }}>
+        Verifying administrative authorization...
+      </div>
+    );
+  }
+
+  if (!user || user.role !== 'ADMIN') {
+    return (
+      <div style={{ maxWidth: '520px', margin: '80px auto', padding: '32px', textAlign: 'center' }} className="glass-panel">
+        <div
+          style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '50%',
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '16px',
+          }}
+        >
+          <Lock size={32} color="#F87171" />
+        </div>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px', color: '#F87171' }}>Access Denied</h2>
+        <p style={{ color: '#94A3B8', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '20px' }}>
+          This portal is strictly restricted to cinema administrators. Customers cannot access administrative management pages or trigger administrative operations.
+        </p>
+        <a href="/" className="btn btn-primary" style={{ padding: '10px 24px', display: 'inline-block' }}>
+          Return to Cinema Home
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '16px' }}>

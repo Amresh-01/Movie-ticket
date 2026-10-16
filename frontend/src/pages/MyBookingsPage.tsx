@@ -210,6 +210,20 @@ export const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
                   <h3 style={{ fontSize: '1.35rem', fontWeight: 800 }}>{booking.movieTitle}</h3>
                   {getStatusBadge(booking.status)}
+                  <span
+                    style={{
+                      fontFamily: 'monospace',
+                      fontSize: '0.78rem',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      color: '#94A3B8',
+                    }}
+                    title={`Booking ID: ${booking.id}`}
+                  >
+                    ID: {booking.id.slice(0, 8)}...
+                  </span>
                 </div>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '18px', color: '#A7ADBC', fontSize: '0.88rem', marginBottom: '12px' }}>
