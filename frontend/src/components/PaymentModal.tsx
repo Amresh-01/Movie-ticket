@@ -1,140 +1,189 @@
 import React, { useState } from 'react';
-import { CreditCard, CheckCircle2, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { CountdownTimer } from './CountdownTimer';
+import { CheckCircle2, XCircle, AlertCircle, Lock } from 'lucide-react';
 
 interface PaymentModalProps {
   bookingId: string;
-  totalAmount: string | number;
-  seatCount: number;
-  initialSeconds: number;
-  onSimulateSuccess: () => Promise<void>;
-  onSimulateFailure: () => Promise<void>;
+  totalAmount: number;
+  expiresInSeconds: number;
+  movieTitle: string;
+  selectedSeatCount: number;
+  onSuccess: () => void;
+  onFail: () => void;
   onCancel: () => void;
   onExpire: () => void;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
+  bookingId: _bookingId,
   totalAmount,
-  seatCount,
-  initialSeconds,
-  onSimulateSuccess,
-  onSimulateFailure,
+  expiresInSeconds,
+  movieTitle,
+  selectedSeatCount,
+  onSuccess,
+  onFail,
   onCancel,
   onExpire,
 }) => {
   const [processing, setProcessing] = useState<boolean>(false);
-  const [failureNotice, setFailureNotice] = useState<string | null>(null);
+  const [failureMessage, setFailureMessage] = useState<string | null>(null);
 
-  const handleSuccess = async () => {
+  const handlePaySuccess = async () => {
     setProcessing(true);
-    setFailureNotice(null);
-    try {
-      await onSimulateSuccess();
-    } finally {
-      setProcessing(false);
-    }
+    setFailureMessage(null);
+    await onSuccess();
+    setProcessing(false);
   };
 
-  const handleFailure = async () => {
+  const handlePayFail = async () => {
     setProcessing(true);
-    try {
-      await onSimulateFailure();
-      setFailureNotice('Payment simulation failed. Your seats remain held so you can retry below.');
-    } finally {
-      setProcessing(false);
-    }
+    await onFail();
+    setFailureMessage('Payment simulation failed as requested. Your seat hold is still active for a retry.');
+    setProcessing(false);
   };
+
+  const serviceFee = 1.5;
+  const grandTotal = Number(totalAmount) + serviceFee;
 
   return (
-    <div className="modal-overlay">
-      <div className="glass-panel modal-content" style={{ padding: '28px', border: '1px solid var(--border-glow)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ background: 'rgba(99, 102, 241, 0.2)', padding: '8px', borderRadius: '8px' }}>
-              <CreditCard size={20} color="#818cf8" />
-            </div>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Simulate Payment</h3>
-          </div>
-          <CountdownTimer initialSeconds={initialSeconds} onExpire={onExpire} />
-        </div>
-
-        <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '20px' }}>
-          Your selected seats are temporarily locked. Choose a simulation scenario to test order confirmation or retry flows.
-        </p>
-
-        {/* Order Summary */}
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(5, 7, 10, 0.85)',
+        backdropFilter: 'blur(12px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: '16px',
+      }}
+    >
+      <div
+        className="glass-panel animate-fade-in"
+        style={{
+          width: '100%',
+          maxWidth: '520px',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Header */}
         <div
           style={{
-            background: 'rgba(15, 23, 42, 0.6)',
-            padding: '16px',
-            borderRadius: '12px',
-            marginBottom: '20px',
+            padding: '24px 28px',
+            background: 'linear-gradient(135deg, #1D2330 0%, #151923 100%)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
         >
           <div>
-            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Total for {seatCount} seats</span>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc' }}>
-              ${Number(totalAmount).toFixed(2)}
-            </div>
+            <span className="badge badge-coral" style={{ marginBottom: '6px' }}>
+              <Lock size={10} /> Secure Checkout
+            </span>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Simulated Payment</h2>
           </div>
-          <span style={{ fontSize: '0.75rem', background: 'rgba(99, 102, 241, 0.2)', color: '#a5b4fc', padding: '4px 8px', borderRadius: '6px' }}>
-            Hold Active
-          </span>
+          <div>
+            <CountdownTimer initialSeconds={expiresInSeconds} onExpire={onExpire} />
+          </div>
         </div>
 
-        {/* Failure Feedback banner if retry occurred */}
-        {failureNotice && (
+        {/* Body */}
+        <div style={{ padding: '24px 28px' }}>
+          {failureMessage && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                color: '#f87171',
+                marginBottom: '16px',
+                fontSize: '0.85rem',
+              }}
+            >
+              <AlertCircle size={16} />
+              <span>{failureMessage}</span>
+            </div>
+          )}
+
+          {/* Itemized summary */}
           <div
             style={{
-              display: 'flex',
-              gap: '10px',
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.4)',
-              color: '#f87171',
-              padding: '12px',
-              borderRadius: '10px',
-              fontSize: '0.85rem',
+              background: 'rgba(255, 255, 255, 0.03)',
+              borderRadius: '12px',
+              padding: '16px',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
               marginBottom: '20px',
             }}
           >
-            <AlertTriangle size={18} style={{ flexShrink: 0 }} />
-            <span>{failureNotice}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+              <span style={{ color: '#A7ADBC' }}>Experience</span>
+              <span style={{ fontWeight: 700, color: '#F7F8FC' }}>{movieTitle}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem' }}>
+              <span style={{ color: '#A7ADBC' }}>Tickets ({selectedSeatCount})</span>
+              <span style={{ fontWeight: 600, color: '#F7F8FC' }}>${Number(totalAmount).toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontSize: '0.9rem' }}>
+              <span style={{ color: '#A7ADBC' }}>Cinema Booking Fee</span>
+              <span style={{ fontWeight: 600, color: '#F7F8FC' }}>${serviceFee.toFixed(2)}</span>
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                paddingTop: '12px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                fontSize: '1.15rem',
+              }}
+            >
+              <span style={{ fontWeight: 700, color: '#F7F8FC' }}>Total Amount</span>
+              <span style={{ fontWeight: 900, color: '#38C98B' }}>${grandTotal.toFixed(2)}</span>
+            </div>
           </div>
-        )}
 
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <button
-            onClick={handleSuccess}
-            disabled={processing}
-            className="btn btn-success"
-            style={{ width: '100%', padding: '12px' }}
-          >
-            {processing ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
-            Simulate Payment Success (Confirm Booking)
-          </button>
+          <p style={{ color: '#94A3B8', fontSize: '0.82rem', marginBottom: '20px', lineHeight: 1.5 }}>
+            This gateway tests concurrency and race conditions under the 5-minute seat lock. Click below to test either scenario.
+          </p>
 
-          <button
-            onClick={handleFailure}
-            disabled={processing}
-            className="btn btn-danger"
-            style={{ width: '100%', padding: '12px' }}
-          >
-            <XCircle size={18} />
-            Simulate Payment Failure (Test Retry)
-          </button>
+          {/* Actions */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <button
+              onClick={handlePaySuccess}
+              disabled={processing}
+              className="btn btn-success"
+              style={{ padding: '12px', fontSize: '0.95rem' }}
+            >
+              <CheckCircle2 size={18} />
+              {processing ? 'Authorizing...' : `Simulate Successful Payment ($${grandTotal.toFixed(2)})`}
+            </button>
 
-          <button
-            onClick={onCancel}
-            disabled={processing}
-            className="btn btn-outline"
-            style={{ width: '100%', marginTop: '4px' }}
-          >
-            Cancel & Release Seats
-          </button>
+            <button
+              onClick={handlePayFail}
+              disabled={processing}
+              className="btn btn-outline"
+              style={{ padding: '10px', fontSize: '0.88rem', borderColor: 'rgba(239, 68, 68, 0.4)', color: '#f87171' }}
+            >
+              <XCircle size={16} />
+              Simulate Payment Decline (Allows Retry)
+            </button>
+
+            <button
+              onClick={onCancel}
+              disabled={processing}
+              className="btn btn-outline"
+              style={{ padding: '10px', fontSize: '0.85rem' }}
+            >
+              Cancel Hold & Release Seats
+            </button>
+          </div>
         </div>
       </div>
     </div>

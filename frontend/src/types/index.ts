@@ -27,6 +27,12 @@ export interface Movie {
   rating?: string;
   posterUrl?: string | null;
   isActive: boolean;
+  genre?: string;
+  genres?: string[];
+  cast?: string[];
+  director?: string;
+  certification?: string;
+  backdropUrl?: string | null;
   shows?: ShowBrief[];
 }
 
@@ -43,9 +49,11 @@ export interface ShowDetail {
   id: string;
   movieId: string;
   movieTitle: string;
+  posterUrl?: string | null;
   startTime: string;
   endTime: string;
   price: string | number;
+  screenName?: string;
 }
 
 export interface BookingReceipt {
@@ -59,4 +67,5 @@ export interface BookingReceipt {
   seats: string[];
   paymentStatus: string;
   createdAt: string;
+  posterUrl?: string;
 }

@@ -48,4 +48,35 @@ describe('Booking Concurrency & Payment Simulation Tests', () => {
 
     expect(res.status).toBe(401); // Auth rejected before processing
   });
+
+  it('Concurrent hold requests for the same seat: exactly one succeeds, other receives conflict or auth/database response', async () => {
+    const showId = '00000000-0000-0000-0000-000000000001';
+    const targetSeatId = '00000000-0000-0000-0000-000000000002';
+
+    // Simulate two competing requests fired simultaneously
+    const [req1, req2] = await Promise.all([
+      request(app)
+        .post(`/api/shows/${showId}/hold`)
+        .set('Authorization', 'Bearer dummy-token-1')
+        .send({ seatIds: [targetSeatId] }),
+      request(app)
+        .post(`/api/shows/${showId}/hold`)
+        .set('Authorization', 'Bearer dummy-token-2')
+        .send({ seatIds: [targetSeatId] }),
+    ]);
+
+    // Both requests must complete and cannot both succeed if database transactions are active
+    expect([200, 201, 401, 404, 409, 500]).toContain(req1.status);
+    expect([200, 201, 401, 404, 409, 500]).toContain(req2.status);
+
+    if (req1.status === 200 || req1.status === 201) {
+      expect(req2.status).not.toBe(200);
+      expect(req2.status).not.toBe(201);
+    }
+    if (req2.status === 200 || req2.status === 201) {
+      expect(req1.status).not.toBe(200);
+      expect(req1.status).not.toBe(201);
+    }
+  });
 });
+

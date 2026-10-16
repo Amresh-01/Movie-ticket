@@ -1,125 +1,206 @@
-# Cinema Ticket Booking System
+# 🎬 Yozigo — 3D Interactive Cinema Ticket Booking System
 
-A full-stack movie ticket booking web application with atomic seat holds, concurrency conflict handling, and simulated payment processing. Built for a single-screen cinema with 80 seats (Rows A–H, Seats 1–10).
-
-## 🚀 Tech Stack
-- **Frontend**: React 18, TypeScript, Vite, Lucide Icons, Glassmorphism Dark UI
-- **Backend**: Node.js, Express, TypeScript, Zod, Bcrypt, JWT
-- **Database & ORM**: PostgreSQL, Prisma ORM
-- **Testing**: Vitest, Supertest
-- **Containerization**: Docker Compose
+> **Full-Stack Engineering Intern Project Submission**  
+> **Candidate:** Amresh Kumar  
+> **Repository:** Monorepo (`frontend/`, `backend/`)  
+> **Documentation:** [System Design & Architecture (SYSTEM_DESIGN.md)](./SYSTEM_DESIGN.md)
 
 ---
 
-## ⚡ Concurrency & Architecture Guarantees
-- **Atomic Multi-Seat Hold**: Reserve 1 to 6 seats for 5 minutes using PostgreSQL pessimistic row locking (`SELECT ... FOR UPDATE`).
-- **Deadlock Prevention**: Seats are deterministically sorted by `seatId ASC` before row locks are acquired.
-- **Zero Double-Booking**: Guaranteed at database level with row locking and composite unique constraints `(showId, seatId)`.
-- **Payment Simulation & Retry**:
-  - Payment failure keeps the 5-minute hold intact so customers can retry before it expires.
-  - Expired holds are rejected atomically even before background cleanups run.
-- **Schedule Conflict Prevention**: Shows reject overlapping time slots on Screen 1 with a 15-minute cleaning turnaround buffer.
-- **Strict Customer Isolation**: Customers can only view their own booking receipts (`userId == req.user.id`).
-- **Admin Guard**: Server-side role guard (`requireAdmin`) protects show scheduling and movie management.
+## 🌟 Overview & Key Highlights
+
+**Yozigo** is an enterprise-ready movie ticket booking platform built with an emphasis on **real-time concurrency control, atomic seat reservation guarantees, and a realistic 3D cinema auditorium simulator**.
+
+The application models a standard single-screen auditorium with **80 physical seats (Rows A–H, Seats 1–10)**, allowing customers to explore movie showtimes, view the auditorium in full 3D, and click any seat to preview the exact seated vantage and sightline looking directly at the live playing movie projection.
 
 ---
 
-## 📁 Monorepo Structure
-```text
-Movie-Ticket/
-├── backend/
-│   ├── prisma/
-│   │   ├── schema.prisma       # Relational models, enums & constraints
-│   │   └── seed.ts             # Seeds Screen 1, 80 seats, Admin & movies
-│   ├── src/
-│   │   ├── app.ts              # Express app & centralized error handling
-│   │   ├── server.ts           # HTTP server listener
-│   │   ├── config/             # Typed env variables
-│   │   ├── controllers/        # Auth, movie, show & booking controllers
-│   │   ├── middlewares/        # Auth, admin guard & Zod validation
-│   │   ├── routes/             # REST endpoints
-│   │   ├── services/           # Concurrency & pessimistic lock engine
-│   │   ├── utils/              # asyncHandler, AppError, JWT & db client
-│   │   └── validators/         # Zod schemas
-│   └── tests/                  # Concurrency & endpoint test suite
-├── frontend/
-│   ├── src/
-│   │   ├── api/                # Fetch client with Bearer token interceptor
-│   │   ├── components/         # 80-seat grid, hold countdown, modals & navbar
-│   │   ├── context/            # AuthContext with token persistence
-│   │   ├── pages/              # Movie list, Seat picker, Receipts, Admin
-│   │   ├── types/              # TypeScript models
-│   │   └── index.css           # Custom glassmorphism design tokens
-├── docker-compose.yml          # PostgreSQL 16 container definition
-└── package.json                # Workspaces configuration
-```
+## ✨ Features Implemented (Flows 1 through 10)
+
+### 1. User Authentication & Session Security
+- User registration and login with salted Bcrypt password hashing and stateless JWT bearer authentication.
+- Automatic session hydration on app load via `GET /api/auth/me`.
+- Role-Based Access Control (`CUSTOMER` vs `ADMIN`).
+
+### 2. Movie Catalog Discovery
+- Filter movies by genre, search by title or plot synopsis, and explore movie details with rating, runtime, and language.
+- Responsive showcase hero banner featuring the headline cinema release.
+
+### 3. Showtime Scheduling & Turnaround Collision Guard
+- Admins can schedule shows with automated collision checks: prevents overlapping showtimes on Screen 1 with a mandatory **15-minute cleaning turnaround buffer**.
+
+### 4. Interactive 3D Cinema Auditorium Simulator (Three.js & R3F)
+- **80 Physical 3D Chairs**: Cushioned velvet seats with cup holders, armrests, and seat number badges.
+- **Stadium Risers & Environment**: Tiered elevation steps, aisle runner carpet with safety glow strips, wall acoustic baffles, and illuminated emergency exit signs.
+- **Dynamic Live Video Screen**: Projection screen displaying an active 60 FPS motion video generated directly from the movie picture with Ken Burns pan/zoom, film grain particles, and anamorphic lens flares.
+- **Sightline Optical Inspection**: Click any seat in 2D or 3D to transition the camera to seated eye level (`[x, eyeY, z]`) looking at screen center with distance in meters, viewing angle, and screen coverage percent.
+- **Instant Back to Overview**: Smoothly return to the full auditorium overview with orbit controls re-enabled.
+
+### 5. Atomic Seat Holds & Concurrency Protection
+- Select 1 to 6 seats and hold them atomically for **5 minutes (300s)**.
+- **Zero Double-Booking Guarantee**: Utilizes PostgreSQL pessimistic row locks (`SELECT ... FOR UPDATE`).
+- **Deadlock Prevention**: Deterministically sorts all `seatIds` alphabetically prior to acquiring locks.
+
+### 6. Payment Simulation & Resilient Retry
+- Modal with live countdown timer reflecting remaining hold seconds.
+- Payment retry capability: simulated payment failure maintains the 5-minute hold intact so customers can retry before it expires.
+
+### 7. Digital Ticket Pass & QR Barcode
+- On successful payment, generates a ticket pass card with booking reference, seat numbers, screen name, showtime, and entrance barcode.
+
+### 8. Self-Service Booking Cancellation
+- Customers can cancel their own confirmed booking up to **2 hours before showtime**.
+- Requests within 2 hours or for past shows are rejected with a clear explanation.
+- Cancelled seats are immediately replenished back to inventory and the booking status updates to `CANCELLED`.
+
+### 9. Admin Occupancy & Bookings Roster
+- Displays total seats (80), booked seats, active holds, occupancy percentage, and total money collected per show.
+- **Confirmed Bookings Roster**: Detailed table displaying Booking ID, Customer Name, Email, Booked Seats, Amount Paid, and Booking Timestamp.
+- Full CRUD controls for movies (edit/deactivate) and shows (delete with confirmed booking protection).
+
+### 10. Live Seat Updates (Real-Time State Polling)
+- Automatic **3-second background polling** on open seat selection maps.
+- When another user holds or books a seat, the seat map reflects the updated state in near real-time without requiring a page reload.
 
 ---
 
-## 🛠️ Getting Started
+## 🏗️ Architecture & Technology Stack
+
+| Layer | Technologies Used |
+|---|---|
+| **Frontend Web App** | React 19, TypeScript, Vite, React Router v7 |
+| **3D Graphics & Optics** | Three.js, React Three Fiber (`@react-three/fiber`), Drei (`@react-three/drei`) |
+| **Styling & UI Tokens** | Glassmorphism UI, Vanilla CSS, Lucide React Icons |
+| **Backend API** | Node.js, Express, TypeScript |
+| **Validation & Security** | Zod (Runtime Schemas), Bcrypt, JWT (JsonWebToken) |
+| **Database & ORM** | Neon PostgreSQL, Prisma ORM, Pessimistic Row Locking (`FOR UPDATE`) |
+| **Media Delivery** | Cloudinary CDN / Remote Image Pipeline |
+
+---
+
+## 🚀 Quick Start Guide
 
 ### 1. Prerequisites
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [Docker Desktop](https://www.docker.com/) OR local PostgreSQL
+- [Node.js](https://nodejs.org/) (v18+)
+- Local PostgreSQL instance OR a free [Neon](https://neon.tech/) cloud database
 
-### 2. Start PostgreSQL Database
-```bash
-# Using Docker:
-docker compose up -d
+### 2. Environment Variables
 
-# Or ensure PostgreSQL is running locally on port 5432 with DATABASE_URL in backend/.env
+Create `backend/.env`:
+```env
+PORT=5000
+DATABASE_URL="postgresql://username:password@localhost:5432/yozigo_db?schema=public"
+JWT_SECRET="super-secret-jwt-key-for-development-32chars"
+JWT_EXPIRES_IN="7d"
+NODE_ENV="development"
+CLIENT_URL="http://localhost:5173"
 ```
 
-### 3. Install Dependencies
+Create `frontend/.env`:
+```env
+VITE_API_BASE_URL="http://localhost:5000/api"
+```
+
+### 3. Installation & Database Setup
 From the repository root:
 ```bash
+# 1. Install root, backend, and frontend dependencies
 npm install
-```
 
-### 4. Database Migration & Seeding
-```bash
-# Push schema to PostgreSQL:
+# 2. Push Prisma database schema to PostgreSQL
 npm run prisma:push -w backend
 
-# Seed Screen 1 (80 seats A1-H10), Admin account, sample movies & show:
+# 3. Seed Screen 1 (80 seats A1-H10), Admin account, sample movies & shows
 npm run prisma:seed -w backend
 ```
 
 > **Default Seeded Accounts:**
-> - **Admin**: `admin@cinema.com` / `Admin@12345Password!`
-> - **Customer**: `customer@test.com` / `Customer@12345Password!`
+> - **Cinema Admin**: `admin@cinema.com` / `Admin@12345Password!`
+> - **Demo Customer**: `customer@test.com` / `Customer@12345Password!`
 
-### 5. Run the Application
-In separate terminal tabs:
+### 4. Running Locally
+Run backend and frontend concurrently or in separate terminal tabs:
 ```bash
-# Start Backend API (runs on http://localhost:5000)
-npm run dev:backend
+# Terminal 1: Backend API (http://localhost:5000)
+npm run dev -w backend
 
-# Start Frontend (runs on http://localhost:5173)
-npm run dev:frontend
+# Terminal 2: Frontend Web Application (http://localhost:5173)
+npm run dev -w frontend
 ```
 
 ---
 
-## 🧪 Running Tests
-```bash
-npm run test:backend
-```
+## 📡 REST API Specification
 
----
-
-## 📡 REST API Reference
-
+### Authentication (`/api/auth`)
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | Public | Register customer account |
-| `POST` | `/api/auth/login` | Public | Log in & receive JWT |
-| `GET` | `/api/auth/me` | User | Get current profile |
-| `GET` | `/api/movies` | Public | List active movies & upcoming shows |
-| `GET` | `/api/shows/:id/seats` | Public / User | 80-seat map with live availability & hold countdowns |
-| `POST` | `/api/shows/:id/hold` | User | Atomically hold 1–6 seats for 5 minutes (`FOR UPDATE`) |
-| `POST` | `/api/bookings/:id/simulate-payment` | User | Simulate payment (`SUCCESS` or `FAILED` with retry) |
-| `POST` | `/api/bookings/:id/release` | User | Voluntarily release held seats |
-| `GET` | `/api/bookings/my` | User | View own booking receipts |
-| `POST` | `/api/admin/shows` | Admin | Schedule show with overlap collision check |
-| `GET` | `/api/admin/shows/:id/occupancy` | Admin | Real-time screen occupancy & revenue report |
+| `POST` | `/api/auth/register` | Public | Register new customer account |
+| `POST` | `/api/auth/login` | Public | Authenticate user & return JWT |
+| `GET` | `/api/auth/me` | Authenticated | Fetch current authenticated user session |
+
+### Movies (`/api/movies`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/movies` | Public | List all active movies and scheduled shows |
+| `GET` | `/api/movies/:id` | Public | Get single movie with upcoming showtimes |
+| `POST` | `/api/movies` | Admin | Create movie with poster & metadata |
+| `PUT` | `/api/movies/:id` | Admin | Update movie details or active status |
+| `DELETE` | `/api/movies/:id` | Admin | Delete/deactivate movie (with booking validation) |
+
+### Shows (`/api/shows`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/shows/:id` | Public | Get show metadata |
+| `GET` | `/api/shows/:id/seats` | Public / User | Get 80-seat map with live availability & hold status |
+| `POST` | `/api/shows` | Admin | Schedule show with overlap & 15-min cleaning buffer guard |
+| `GET` | `/api/shows/:id/occupancy` | Admin | Get booked count, revenue, and customer bookings roster |
+| `DELETE` | `/api/shows/:id` | Admin | Delete show schedule (blocked if confirmed bookings exist) |
+
+### Bookings (`/api/`)
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/shows/:id/hold` | Authenticated | Atomically hold 1–6 seats for 5 mins (`FOR UPDATE`) |
+| `POST` | `/api/bookings/:id/simulate-payment` | Authenticated | Complete or fail simulated payment attempt |
+| `POST` | `/api/bookings/:id/release` | Authenticated | Manually release held seats back to cinema |
+| `GET` | `/api/bookings/my` | Authenticated | Retrieve customer's own admission tickets |
+| `POST` | `/api/bookings/:id/cancel` | Authenticated | Cancel booking (> 2 hrs before show) & release seats |
+
+---
+
+## 📁 Repository Directory Structure
+
+```text
+Movie-Ticket/
+├── SYSTEM_DESIGN.md            # Complete High-Level Design (HLD) & Architecture
+├── README.md                   # Project overview & quick start
+├── backend/
+│   ├── prisma/
+│   │   ├── schema.prisma       # Relational models, enums & foreign keys
+│   │   └── seed.ts             # Seeds 80 seats, Screen 1, admin & sample movies
+│   ├── src/
+│   │   ├── app.ts              # Express application setup & middleware
+│   │   ├── server.ts           # Server bootstrap
+│   │   ├── controllers/        # Auth, movie, show, and booking controllers
+│   │   ├── middlewares/        # Auth, admin guard & Zod validator
+│   │   ├── routes/             # REST route endpoints
+│   │   ├── services/           # Concurrency, locking & booking business logic
+│   │   └── utils/              # ApiResponse, ApiError, asyncHandler, Prisma client
+├── frontend/
+│   ├── src/
+│   │   ├── api/client.ts       # Centralized API client with JWT interception
+│   │   ├── components/         # 3D Cinema Simulator, SeatMap, Navbar, Modals
+│   │   ├── context/            # Authentication context provider
+│   │   ├── pages/              # MovieList, MovieDetails, ShowBooking, Confirmation, Admin
+│   │   └── types/              # TypeScript interfaces
+│   └── index.html
+```
+
+---
+
+## ⚖️ Concurrency & Real-Time Sync Rationale (README Question)
+
+### Why 3-Second Polling Was Chosen Over WebSockets / SSE:
+1. **Serverless & Edge Alignment**: Modern cinema backends frequently deploy on serverless platforms (e.g. Vercel, Neon, AWS Lambda). Persistent WebSocket servers introduce stateful connection complexity, heartbeat synchronization, and reconnection storms on mobile networks.
+2. **5-Minute Hold Lifecycle**: Because seat holds last 300 seconds, an adaptive **3-second polling interval** ensures that seat changes propagate across users almost instantaneously with negligible bandwidth overhead.
+3. **Resilience & Proxy Traversal**: Short HTTP polling works universally across all corporate firewalls, mobile proxies, and browser sleep modes without connection drops.

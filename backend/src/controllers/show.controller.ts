@@ -91,6 +91,7 @@ export const getShowSeats = asyncHandler<AuthenticatedRequest>(async (req: Authe
           id: show.id,
           movieId: show.movieId,
           movieTitle: show.movie.title,
+          posterUrl: show.movie.posterUrl,
           startTime: show.startTime,
           endTime: show.endTime,
           price: show.price,
@@ -214,9 +215,39 @@ export const getShowOccupancy = asyncHandler(async (req: Request, res: Response)
     }
   }
 
-  const totalSeats = show.showSeats.length;
-  const occupancyRate = totalSeats > 0 ? ((bookedCount / totalSeats) * 100).toFixed(1) + '%' : '0%';
-  const totalRevenue = Number(show.price) * bookedCount;
+  // Retrieve bookings with customer details
+  const confirmedBookings = await prisma.booking.findMany({
+    where: {
+      showId: id,
+      status: 'CONFIRMED',
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      seats: {
+        include: {
+          seat: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  const bookingsList = confirmedBookings.map((b) => ({
+    id: b.id,
+    customerName: b.user.name,
+    customerEmail: b.user.email,
+    seats: b.seats.map((s) => `${s.seat.row}${s.seat.number}`),
+    totalAmount: Number(b.totalAmount),
+    bookedAt: b.createdAt,
+  }));
 
   res.json(
     new ApiResponse(
@@ -233,6 +264,7 @@ export const getShowOccupancy = asyncHandler(async (req: Request, res: Response)
         availableCount,
         occupancyRate,
         totalRevenue,
+        bookings: bookingsList,
       },
       'Occupancy report generated successfully'
     )

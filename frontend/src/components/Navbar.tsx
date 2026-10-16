@@ -1,96 +1,299 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Film, User, LogOut, ShieldCheck, Ticket } from 'lucide-react';
+import { Film, User, LogOut, Ticket, ShieldCheck } from 'lucide-react';
 
 interface NavbarProps {
   currentView: string;
   onNavigate: (view: string) => void;
+  selectedCity?: string;
+  onCityChange?: (city: string) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
   const { user, logout } = useAuth();
 
   return (
-    <nav className="glass-panel" style={{ margin: '16px 24px', padding: '12px 24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        {/* Brand */}
+    <header
+      style={{
+        position: 'sticky',
+        top: '12px',
+        zIndex: 50,
+        maxWidth: '1260px',
+        margin: '0 auto 24px',
+        padding: '0 16px',
+        width: '100%',
+      }}
+    >
+      <nav
+        style={{
+          background: 'rgba(255, 255, 255, 0.96)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderRadius: '16px',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
+          padding: '10px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+        }}
+      >
+        {/* Brand Logo with 3D Cinema Tag */}
         <div
           onClick={() => onNavigate('movies')}
-          style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
         >
           <div
             style={{
-              background: 'linear-gradient(135deg, #6366f1 0%, #ec4899 100%)',
-              padding: '8px',
-              borderRadius: '10px',
+              width: '38px',
+              height: '38px',
+              borderRadius: '11px',
+              background: 'linear-gradient(135deg, #FF5A6E 0%, #8B5CF6 100%)',
               display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(255, 90, 110, 0.28)',
             }}
           >
-            <Film size={22} color="#fff" />
+            <Film size={20} color="#FFFFFF" />
           </div>
+
           <div>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-              Cine<span style={{ color: '#6366f1' }}>Hold</span>
-            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ fontSize: '1.3rem', fontWeight: 900, letterSpacing: '-0.025em', color: '#0F172A' }}>
+                Yozigo
+              </span>
+              <span style={{ fontSize: '1.3rem', fontWeight: 900, letterSpacing: '-0.025em', color: '#FF5A6E' }}>
+                Cinemas
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span
+                style={{
+                  fontSize: '0.66rem',
+                  color: '#64748B',
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                }}
+              >
+                3D Simulator Experience
+              </span>
+              <span
+                style={{
+                  fontSize: '0.62rem',
+                  color: '#059669',
+                  background: '#ECFDF5',
+                  padding: '1px 5px',
+                  borderRadius: '4px',
+                  fontWeight: 800,
+                  border: '1px solid #A7F3D0',
+                }}
+              >
+                ACTIVE
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Navigation Links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {/* Navigation Tabs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Movies Button */}
           <button
             onClick={() => onNavigate('movies')}
-            className={`btn ${currentView === 'movies' ? 'btn-primary' : 'btn-outline'}`}
-            style={{ fontSize: '0.85rem', padding: '8px 14px' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              borderRadius: '10px',
+              fontSize: '0.88rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              border: 'none',
+              transition: 'all 0.15s ease',
+              color: currentView === 'movies' || currentView === 'movie-details' ? '#FFFFFF' : '#475569',
+              background:
+                currentView === 'movies' || currentView === 'movie-details'
+                  ? 'linear-gradient(135deg, #FF5A6E 0%, #E11D48 100%)'
+                  : 'transparent',
+              boxShadow:
+                currentView === 'movies' || currentView === 'movie-details'
+                  ? '0 3px 10px rgba(255, 90, 110, 0.3)'
+                  : 'none',
+            }}
+            onMouseEnter={(e) => {
+              if (currentView !== 'movies' && currentView !== 'movie-details') {
+                e.currentTarget.style.background = '#F1F5F9';
+                e.currentTarget.style.color = '#0F172A';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (currentView !== 'movies' && currentView !== 'movie-details') {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = '#475569';
+              }
+            }}
           >
-            <Film size={16} /> Movies
+            <Film size={15} />
+            <span>Movies</span>
           </button>
 
+          {/* Passes Tab */}
           {user && (
             <button
               onClick={() => onNavigate('bookings')}
-              className={`btn ${currentView === 'bookings' ? 'btn-primary' : 'btn-outline'}`}
-              style={{ fontSize: '0.85rem', padding: '8px 14px' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '10px',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: 'none',
+                transition: 'all 0.15s ease',
+                color: currentView === 'bookings' || currentView === 'confirmation' ? '#FFFFFF' : '#475569',
+                background:
+                  currentView === 'bookings' || currentView === 'confirmation'
+                    ? 'linear-gradient(135deg, #FF5A6E 0%, #E11D48 100%)'
+                    : 'transparent',
+                boxShadow:
+                  currentView === 'bookings' || currentView === 'confirmation'
+                    ? '0 3px 10px rgba(255, 90, 110, 0.3)'
+                    : 'none',
+              }}
+              onMouseEnter={(e) => {
+                if (currentView !== 'bookings' && currentView !== 'confirmation') {
+                  e.currentTarget.style.background = '#F1F5F9';
+                  e.currentTarget.style.color = '#0F172A';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (currentView !== 'bookings' && currentView !== 'confirmation') {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = '#475569';
+                }
+              }}
             >
-              <Ticket size={16} /> My Bookings
+              <Ticket size={15} />
+              <span>My Passes</span>
             </button>
           )}
 
+          {/* Admin Tab */}
           {user?.role === 'ADMIN' && (
             <button
               onClick={() => onNavigate('admin')}
-              className={`btn ${currentView === 'admin' ? 'btn-primary' : 'btn-outline'}`}
-              style={{ fontSize: '0.85rem', padding: '8px 14px', borderColor: 'rgba(245, 158, 11, 0.4)' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 13px',
+                borderRadius: '10px',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                border: '1px solid #FCD34D',
+                background: currentView === 'admin' ? '#FEF3C7' : '#FFFBEB',
+                color: '#B45309',
+              }}
             >
-              <ShieldCheck size={16} color="#f59e0b" /> Admin
+              <ShieldCheck size={14} />
+              <span>Admin</span>
             </button>
           )}
 
+          {/* User Account Capsule / Sign In */}
           {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: '8px' }}>
-              <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user.name}</span>
-                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{user.role}</span>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '4px 10px 4px 6px',
+                borderRadius: '12px',
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                marginLeft: '4px',
+              }}
+            >
+              <div
+                style={{
+                  width: '30px',
+                  height: '30px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #8B5CF6 0%, #6366F1 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  fontSize: '0.85rem',
+                  color: '#FFFFFF',
+                }}
+              >
+                {user.name.charAt(0).toUpperCase()}
               </div>
+
+              <div style={{ lineHeight: 1.2 }}>
+                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0F172A' }}>{user.name}</div>
+                <div style={{ fontSize: '0.68rem', color: user.role === 'ADMIN' ? '#B45309' : '#64748B', fontWeight: 600 }}>
+                  {user.role}
+                </div>
+              </div>
+
               <button
                 onClick={logout}
-                className="btn btn-outline"
-                title="Logout"
-                style={{ padding: '8px', borderRadius: '8px' }}
+                title="Sign Out"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#94A3B8',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#EF4444')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#94A3B8')}
               >
-                <LogOut size={16} />
+                <LogOut size={15} />
               </button>
             </div>
           ) : (
             <button
               onClick={() => onNavigate('login')}
-              className="btn btn-primary"
-              style={{ fontSize: '0.85rem', padding: '8px 16px' }}
+              style={{
+                background: 'linear-gradient(135deg, #FF5A6E 0%, #E11D48 100%)',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '8px 20px',
+                fontSize: '0.88rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 3px 10px rgba(255, 90, 110, 0.3)',
+                marginLeft: '6px',
+              }}
             >
-              <User size={16} /> Sign In
+              <User size={15} />
+              <span>Sign In</span>
             </button>
           )}
         </div>
-      </div>
-    </nav>
+      </nav>
+    </header>
   );
 };
