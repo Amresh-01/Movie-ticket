@@ -14,6 +14,23 @@ export const createApp = () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // Welcome root endpoint
+  app.get('/', (req: Request, res: Response) => {
+    res.json(
+      new ApiResponse(
+        200,
+        {
+          name: 'Cinema Ticket Booking API',
+          version: '1.0.0',
+          status: 'ONLINE',
+          healthCheck: '/api/health',
+          documentation: 'Available endpoints: /api/movies, /api/shows, /api/auth, /api/bookings',
+        },
+        'Welcome to Movie Ticket Booking Backend API'
+      )
+    );
+  });
+
   // Health check endpoint
   app.get('/api/health', (req: Request, res: Response) => {
     res.json(
