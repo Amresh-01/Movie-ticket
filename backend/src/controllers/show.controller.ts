@@ -215,6 +215,10 @@ export const getShowOccupancy = asyncHandler(async (req: Request, res: Response)
     }
   }
 
+  const totalSeats = show.showSeats.length || 80;
+  const occupancyRate = totalSeats > 0 ? Number(((bookedCount / totalSeats) * 100).toFixed(1)) : 0;
+  const totalRevenue = Number(show.price) * bookedCount;
+
   // Retrieve bookings with customer details
   const confirmedBookings = await prisma.booking.findMany({
     where: {

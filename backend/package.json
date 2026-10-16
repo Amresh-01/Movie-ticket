@@ -4,12 +4,13 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
+    "render-build": "npm install && prisma generate && tsc",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
-    "prisma:seed": "ts-node-dev prisma/seed.ts",
+    "prisma:seed": "node -r ts-node/register prisma/seed.ts || ts-node-dev prisma/seed.ts",
     "test": "vitest run"
   },
   "dependencies": {
