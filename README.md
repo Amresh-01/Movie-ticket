@@ -243,7 +243,103 @@ Movie-Ticket/
 
 ---
 
-## 🗄️ Database Design (Tables & Relations)
+## 🗄️ Database Design (Tables, Relations & ER Diagram)
+
+### Entity-Relationship (ER) Diagram
+
+```mermaid
+erDiagram
+    User ||--o{ Booking : "places (1:N)"
+    Screen ||--|{ Seat : "contains 80 (1:N)"
+    Screen ||--o{ Show : "schedules (1:N)"
+    Movie ||--o{ Show : "has (1:N)"
+    Show ||--|{ ShowSeat : "allocates 80 (1:N)"
+    Seat ||--o{ ShowSeat : "mapped to (1:N)"
+    Booking ||--o{ ShowSeat : "holds/reserves (1:N)"
+    Booking ||--|| Payment : "settles (1:1)"
+
+    User {
+        String id PK "UUID"
+        String email UK
+        String passwordHash
+        String name
+        Role role "CUSTOMER | ADMIN"
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    Movie {
+        String id PK "UUID"
+        String title
+        String description
+        Int durationMin
+        String language
+        String rating "U | UA | A"
+        String posterUrl
+        Boolean isActive
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    Screen {
+        String id PK "UUID"
+        String name "Screen 1"
+        Int totalSeats "80"
+    }
+
+    Seat {
+        String id PK "UUID"
+        String screenId FK
+        String row "A to H"
+        Int number "1 to 10"
+    }
+
+    Show {
+        String id PK "UUID"
+        String movieId FK
+        String screenId FK
+        DateTime startTime
+        DateTime endTime
+        Decimal price
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    ShowSeat {
+        String id PK "UUID"
+        String showId FK
+        String seatId FK
+        String heldByUserId "Nullable"
+        DateTime heldUntil "5-min TTL"
+        String bookingId FK "Nullable"
+        Int version "Optimistic/Lock tracking"
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    Booking {
+        String id PK "UUID"
+        String userId FK
+        String showId FK
+        Decimal totalAmount
+        BookingStatus status "PENDING | CONFIRMED | CANCELLED | EXPIRED"
+        DateTime holdExpiresAt
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    Payment {
+        String id PK "UUID"
+        String bookingId FK "UNIQUE"
+        Decimal amount
+        PaymentStatus status "PENDING | SUCCESS | FAILED"
+        String transactionRef
+        DateTime createdAt
+        DateTime updatedAt
+    }
+```
+
+### Relational Schema & Constraints Table
 
 | Table | Columns | Constraints & Indexes | Relations |
 |---|---|---|---|
