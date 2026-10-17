@@ -249,93 +249,93 @@ Movie-Ticket/
 
 ```mermaid
 erDiagram
-    User ||--o{ Booking : "places (1:N)"
-    Screen ||--|{ Seat : "contains 80 (1:N)"
-    Screen ||--o{ Show : "schedules (1:N)"
-    Movie ||--o{ Show : "has (1:N)"
-    Show ||--|{ ShowSeat : "allocates 80 (1:N)"
-    Seat ||--o{ ShowSeat : "mapped to (1:N)"
-    Booking ||--o{ ShowSeat : "holds/reserves (1:N)"
-    Booking ||--|| Payment : "settles (1:1)"
+    User ||--o{ Booking : "has many"
+    Booking ||--|| Payment : "has one"
+    Show ||--o{ Booking : "has many"
+    Show ||--|{ ShowSeat : "allocates 80"
+    Seat ||--o{ ShowSeat : "maps to"
+    Booking ||--o{ ShowSeat : "reserves"
+    Movie ||--o{ Show : "has many"
+    Screen ||--o{ Show : "hosts"
+    Screen ||--|{ Seat : "has 80"
 
-    User {
-        String id PK "UUID"
-        String email UK
-        String passwordHash
-        String name
-        Role role "CUSTOMER | ADMIN"
-        DateTime createdAt
-        DateTime updatedAt
-    }
-
-    Movie {
-        String id PK "UUID"
-        String title
-        String description
-        Int durationMin
-        String language
-        String rating "U | UA | A"
-        String posterUrl
-        Boolean isActive
-        DateTime createdAt
-        DateTime updatedAt
-    }
-
-    Screen {
-        String id PK "UUID"
-        String name "Screen 1"
-        Int totalSeats "80"
-    }
-
-    Seat {
-        String id PK "UUID"
-        String screenId FK
-        String row "A to H"
-        Int number "1 to 10"
-    }
-
-    Show {
-        String id PK "UUID"
-        String movieId FK
-        String screenId FK
-        DateTime startTime
-        DateTime endTime
-        Decimal price
-        DateTime createdAt
-        DateTime updatedAt
-    }
-
-    ShowSeat {
-        String id PK "UUID"
-        String showId FK
-        String seatId FK
-        String heldByUserId "Nullable"
-        DateTime heldUntil "5-min TTL"
-        String bookingId FK "Nullable"
-        Int version "Optimistic/Lock tracking"
-        DateTime createdAt
-        DateTime updatedAt
+    Payment {
+        string id PK
+        string bookingId FK
+        decimal amount "decimal(10,2)"
+        paymentstatus status
+        string transactionRef
+        datetime createdAt
+        datetime updatedAt
     }
 
     Booking {
-        String id PK "UUID"
-        String userId FK
-        String showId FK
-        Decimal totalAmount
-        BookingStatus status "PENDING | CONFIRMED | CANCELLED | EXPIRED"
-        DateTime holdExpiresAt
-        DateTime createdAt
-        DateTime updatedAt
+        string id PK
+        string userId FK
+        string showId FK
+        decimal totalAmount "decimal(10,2)"
+        bookingstatus status
+        datetime holdExpiresAt
+        datetime createdAt
+        datetime updatedAt
     }
 
-    Payment {
-        String id PK "UUID"
-        String bookingId FK "UNIQUE"
-        Decimal amount
-        PaymentStatus status "PENDING | SUCCESS | FAILED"
-        String transactionRef
-        DateTime createdAt
-        DateTime updatedAt
+    User {
+        string id PK
+        string email UK
+        string passwordHash
+        string name
+        role role
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Show {
+        string id PK
+        string movieId FK
+        string screenId FK
+        datetime startTime
+        datetime endTime
+        decimal price "decimal(10,2)"
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Movie {
+        string id PK
+        string title
+        string description
+        int durationMin
+        string language
+        string rating
+        string posterUrl
+        boolean isActive
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    ShowSeat {
+        string id PK
+        string showId FK
+        string seatId FK
+        string heldByUserId "Nullable"
+        datetime heldUntil "Nullable (5m TTL)"
+        string bookingId FK "Nullable"
+        int version
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    Seat {
+        string id PK
+        string screenId FK
+        string row
+        int number
+    }
+
+    Screen {
+        string id PK
+        string name
     }
 ```
 
