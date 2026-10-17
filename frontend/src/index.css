@@ -388,3 +388,26 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.75rem;
   }
 }
+
+/* Modal Overlay & Dialog Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(5, 7, 10, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 480px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

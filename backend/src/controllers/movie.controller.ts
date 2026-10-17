@@ -109,8 +109,8 @@ export const getMovieById = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const createMovie = asyncHandler(async (req: Request, res: Response) => {
-  const { title, description, durationMin, posterUrl, language, rating } = req.body;
-  let finalPosterUrl = posterUrl || null;
+  const { title, description, durationMin, posterUrl, avatarUrl, avatar, language, rating } = req.body;
+  let finalPosterUrl = posterUrl || avatarUrl || avatar || null;
 
   // If a file was uploaded via multipart/form-data, upload to Cloudinary
   if (req.file) {
@@ -136,7 +136,7 @@ export const createMovie = asyncHandler(async (req: Request, res: Response) => {
 
 export const updateMovie = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { title, description, durationMin, posterUrl, language, rating, isActive } = req.body;
+  const { title, description, durationMin, posterUrl, avatarUrl, avatar, language, rating, isActive } = req.body;
 
   const existingMovie = await prisma.movie.findUnique({
     where: { id },
@@ -146,7 +146,7 @@ export const updateMovie = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(404, 'Movie not found', [], 'MOVIE_NOT_FOUND');
   }
 
-  let finalPosterUrl = posterUrl;
+  let finalPosterUrl = posterUrl || avatarUrl || avatar;
   if (req.file) {
     const uploadResult = await uploadBufferOnCloudinary(req.file.buffer, 'movies');
     if (uploadResult?.secure_url) {

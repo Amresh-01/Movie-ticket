@@ -12,11 +12,13 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
   const { user, logout } = useAuth();
 
+  const isAuthView = currentView === 'login';
+
   return (
     <header
       style={{
-        position: 'sticky',
-        top: '12px',
+        position: isAuthView ? 'relative' : 'sticky',
+        top: isAuthView ? '0' : '12px',
         zIndex: 50,
         maxWidth: '1260px',
         margin: '0 auto 24px',
@@ -39,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
           gap: '16px',
         }}
       >
-        {/* Brand Logo with 3D Cinema Tag */}
+        {/* Brand Logo with CineSpot Theme */}
         <div
           onClick={() => onNavigate('movies')}
           style={{
@@ -52,39 +54,39 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
         >
           <div
             style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '11px',
-              background: 'linear-gradient(135deg, #FF5A6E 0%, #8B5CF6 100%)',
+              width: '40px',
+              height: '40px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #FF385C 0%, #E11D48 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(255, 90, 110, 0.28)',
+              boxShadow: '0 4px 14px rgba(255, 56, 92, 0.35)',
             }}
           >
-            <Film size={20} color="#FFFFFF" />
+            <Film size={22} color="#FFFFFF" />
           </div>
 
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <span style={{ fontSize: '1.3rem', fontWeight: 900, letterSpacing: '-0.025em', color: '#0F172A' }}>
-                Yozigo
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <span style={{ fontSize: '1.4rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#0F172A' }}>
+                Cine
               </span>
-              <span style={{ fontSize: '1.3rem', fontWeight: 900, letterSpacing: '-0.025em', color: '#FF5A6E' }}>
-                Cinemas
+              <span style={{ fontSize: '1.4rem', fontWeight: 900, letterSpacing: '-0.03em', color: '#FF385C' }}>
+                Spot
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span
                 style={{
-                  fontSize: '0.66rem',
+                  fontSize: '0.64rem',
                   color: '#64748B',
-                  letterSpacing: '0.06em',
+                  letterSpacing: '0.08em',
                   textTransform: 'uppercase',
-                  fontWeight: 700,
+                  fontWeight: 800,
                 }}
               >
-                3D Simulator Experience
+                Cinema Experience
               </span>
               <span
                 style={{
@@ -97,7 +99,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
                   border: '1px solid #A7F3D0',
                 }}
               >
-                ACTIVE
+                LIVE
               </span>
             </div>
           </div>

@@ -283,9 +283,8 @@ export const ShowBookingPage: React.FC<ShowBookingPageProps> = ({
         {/* Selection checkout summary */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>
-              {selectedSeatIds.length} seat(s) selected
-              {selectedSeatLabels && ` (${selectedSeatLabels})`}
+            <div style={{ fontSize: '0.85rem', color: '#CBD5E1', fontWeight: 600 }}>
+              Selected seats: <span style={{ color: '#FF5A6E', fontWeight: 800 }}>{selectedSeatLabels || 'None'}</span>
             </div>
             <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#38C98B' }}>
               ₹{(selectedSeatIds.length * Number(show.price)).toFixed(2)}
@@ -295,10 +294,10 @@ export const ShowBookingPage: React.FC<ShowBookingPageProps> = ({
             onClick={handleInitiateHold}
             disabled={selectedSeatIds.length === 0 || holding}
             className="btn btn-primary"
-            style={{ padding: '12px 28px', fontSize: '1rem' }}
+            style={{ padding: '12px 28px', fontSize: '1rem', fontWeight: 700 }}
           >
             <Sparkles size={16} />
-            {holding ? 'Holding Seats...' : 'Proceed to Checkout'}
+            {holding ? 'Holding Seats (5 mins)...' : 'Continue'}
           </button>
         </div>
       </div>

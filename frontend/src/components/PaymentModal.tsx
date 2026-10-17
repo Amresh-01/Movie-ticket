@@ -97,19 +97,24 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
             <div
               style={{
                 display: 'flex',
-                alignItems: 'center',
+                flexDirection: 'column',
                 gap: '8px',
-                padding: '12px 14px',
+                padding: '14px 16px',
                 borderRadius: '10px',
                 background: 'rgba(239, 68, 68, 0.15)',
                 border: '1px solid rgba(239, 68, 68, 0.4)',
                 color: '#f87171',
-                marginBottom: '16px',
-                fontSize: '0.85rem',
+                marginBottom: '18px',
+                fontSize: '0.88rem',
               }}
             >
-              <AlertCircle size={16} />
-              <span>{failureMessage}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, fontSize: '0.98rem' }}>
+                <AlertCircle size={18} />
+                <span>Payment failed</span>
+              </div>
+              <p style={{ margin: 0, color: '#fca5a5', fontSize: '0.84rem', lineHeight: 1.4 }}>
+                {failureMessage}
+              </p>
             </div>
           )}
 
@@ -162,7 +167,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               style={{ padding: '12px', fontSize: '0.95rem' }}
             >
               <CheckCircle2 size={18} />
-              {processing ? 'Authorizing...' : `Simulate Successful Payment (₹${grandTotal.toFixed(2)})`}
+              {processing ? 'Processing...' : failureMessage ? 'Try again (Payment success)' : 'Payment success'}
             </button>
 
             <button
@@ -172,7 +177,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               style={{ padding: '10px', fontSize: '0.88rem', borderColor: 'rgba(239, 68, 68, 0.4)', color: '#f87171' }}
             >
               <XCircle size={16} />
-              Simulate Payment Decline (Allows Retry)
+              {processing ? 'Processing...' : 'Payment failure'}
             </button>
 
             <button

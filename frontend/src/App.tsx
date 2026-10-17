@@ -8,6 +8,7 @@ import { ShowBookingPage } from './pages/ShowBookingPage';
 import { BookingConfirmationPage } from './pages/BookingConfirmationPage';
 import { MyBookingsPage } from './pages/MyBookingsPage';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AuthPage } from './pages/AuthPage';
 import { AuthModal } from './components/AuthModal';
 import type { Movie, BookingReceipt } from './types';
 
@@ -24,6 +25,7 @@ const MainLayout: React.FC = () => {
   const getCurrentView = (): string => {
     const path = location.pathname;
     if (path === '/') return 'movies';
+    if (path === '/auth' || path === '/login') return 'login';
     if (path.startsWith('/movies')) return 'movie-details';
     if (path.startsWith('/shows')) return 'booking';
     if (path.startsWith('/booking/confirmation')) return 'confirmation';
@@ -50,25 +52,29 @@ const MainLayout: React.FC = () => {
     }
   };
 
+  const currentView = getCurrentView();
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Universal Responsive Navbar */}
-      <Navbar
-        currentView={getCurrentView()}
-        selectedCity={selectedCity}
-        onCityChange={setSelectedCity}
-        onNavigate={(view) => {
-          if (view === 'login') {
-            setShowAuthModal(true);
-          } else if (view === 'movies') {
-            navigate('/');
-          } else if (view === 'bookings') {
-            navigate('/my-bookings');
-          } else if (view === 'admin') {
-            navigate('/admin');
-          }
-        }}
-      />
+      {/* Universal Responsive Navbar (hidden on auth/login page) */}
+      {currentView !== 'login' && (
+        <Navbar
+          currentView={currentView}
+          selectedCity={selectedCity}
+          onCityChange={setSelectedCity}
+          onNavigate={(view) => {
+            if (view === 'login') {
+              navigate('/auth');
+            } else if (view === 'movies') {
+              navigate('/');
+            } else if (view === 'bookings') {
+              navigate('/my-bookings');
+            } else if (view === 'admin') {
+              navigate('/admin');
+            }
+          }}
+        />
+      )}
 
       {/* Declarative React Router Routes */}
       <main style={{ flex: 1, paddingBottom: '40px' }}>
@@ -149,6 +155,10 @@ const MainLayout: React.FC = () => {
           {/* Route 6: Admin Dashboard */}
           <Route path="/admin" element={<AdminDashboard />} />
 
+          {/* Route 7: Dedicated Full-Page Sign In / Sign Up View */}
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/login" element={<AuthPage />} />
+
           {/* Catch-all redirect to Home */}
           <Route
             path="*"
@@ -182,8 +192,8 @@ const MainLayout: React.FC = () => {
         }}
       >
         <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <span>© {new Date().getFullYear()} Yozigo Cinemas. All rights reserved.</span>
-          <span>Screen 1 • 80 Physical Luxury Cinema Seats • 3D Simulator Enabled</span>
+          <span>© {new Date().getFullYear()} CineSpot. All rights reserved.</span>
+          <span>Screen 1 • 80 Cinema Seats • Clean & Fast Booking</span>
         </div>
       </footer>
     </div>

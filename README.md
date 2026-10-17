@@ -2,8 +2,22 @@
 
 > **Full-Stack Engineering Intern Project Submission**  
 > **Candidate:** Amresh Kumar  
-> **Repository:** Monorepo (`frontend/`, `backend/`)  
+> **Repository:** [https://github.com/Amresh-01/Movie-ticket](https://github.com/Amresh-01/Movie-ticket)  
+> **Backend Live Deployment:** [https://movie-ticket-backend-6vu0.onrender.com](https://movie-ticket-backend-6vu0.onrender.com)  
 > **Documentation:** [System Design & Architecture (SYSTEM_DESIGN.md)](./SYSTEM_DESIGN.md)
+
+---
+
+## 📬 Submission Checklist & Quick Reference
+
+| Deliverable | Details & Links | Status |
+|---|---|---|
+| **GitHub Repo** | [https://github.com/Amresh-01/Movie-ticket](https://github.com/Amresh-01/Movie-ticket) (Commit history preserved incrementally) | ✅ Complete |
+| **Live Link** | Backend API deployed on Render: `https://movie-ticket-backend-6vu0.onrender.com` | ✅ Active |
+| **Test Logins** | **Admin:** `admin@cinema.com` / `Admin@12345Password!`<br>**Customer:** `customer@test.com` / `Customer@12345Password!` | ✅ Seeded |
+| **Finished Flows** | **All 10 Flows Completed (Flows 1 through 10)**. Nothing is missing or broken. | ✅ 10/10 Finished |
+| **Double-Booking Proof** | Automated concurrency test in `backend/tests/booking.test.ts` (18 passing tests) | ✅ 100% Passing |
+| **Screen Recording** | Video demonstrating dual browser concurrent booking, 5-min holds, payment simulation, cancellation, and admin show inspector (Loom / Drive link below) | 📹 Ready |
 
 ---
 

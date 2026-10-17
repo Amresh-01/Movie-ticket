@@ -13,6 +13,7 @@ import { holdSeatsSchema, simulatePaymentSchema } from '../validators';
 const router = Router();
 router.post('/shows/:id/hold', authenticate, validateBody(holdSeatsSchema), holdSeats);
 router.post('/bookings/:id/simulate-payment', authenticate, validateBody(simulatePaymentSchema), simulatePayment);
+router.post('/bookings/:id/pay', authenticate, validateBody(simulatePaymentSchema), simulatePayment);
 router.post('/bookings/:id/release', authenticate, releaseHold);
 router.post('/bookings/:id/cancel', authenticate, cancelBooking);
 

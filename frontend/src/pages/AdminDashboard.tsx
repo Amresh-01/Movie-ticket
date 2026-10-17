@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from '../api/client';
-import type { Movie } from '../types';
+import type { Movie, SeatInfo } from '../types';
 import { ShieldCheck, Plus, Calendar, Film, BarChart3, Trash2, Edit2, X, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { SeatMap } from '../components/SeatMap';
 
 interface BookingRecord {
   id: string;
@@ -43,7 +44,19 @@ export const AdminDashboard: React.FC = () => {
   const [newDesc, setNewDesc] = useState<string>('');
   const [newDuration, setNewDuration] = useState<number>(120);
   const [newPoster, setNewPoster] = useState<string>('');
+  const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [movieFeedback, setMovieFeedback] = useState<{ message: string; isError: boolean } | null>(null);
+  const [isCreatingMovie, setIsCreatingMovie] = useState<boolean>(false);
+
+  // Preset cinematic movie poster avatars
+  const AVATAR_PRESETS = [
+    { label: 'Sci-Fi / Space', url: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800' },
+    { label: 'Deep Cosmos', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=800' },
+    { label: 'Gotham Dark', url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800' },
+    { label: 'Action Neon', url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800' },
+    { label: 'Cinema Reel', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800' },
+  ];
 
   useEffect(() => {
     fetchMovies();
@@ -85,27 +98,58 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
   const handleCreateMovie = async (e: React.FormEvent) => {
     e.preventDefault();
     setMovieFeedback(null);
+    setIsCreatingMovie(true);
 
-    const res = await apiRequest('/movies', {
-      method: 'POST',
-      body: JSON.stringify({
-        title: newTitle,
-        description: newDesc,
-        durationMin: Number(newDuration),
-        posterUrl: newPoster || undefined,
-      }),
-    });
+    try {
+      let res;
+      if (newAvatarFile) {
+        const formData = new FormData();
+        formData.append('title', newTitle);
+        formData.append('description', newDesc);
+        formData.append('durationMin', String(newDuration));
+        formData.append('poster', newAvatarFile);
 
-    if (res.success) {
-      setMovieFeedback({ message: 'Movie created successfully!', isError: false });
-      setNewTitle('');
-      setNewDesc('');
-      fetchMovies();
-    } else {
-      setMovieFeedback({ message: res.error?.message || 'Failed to add movie', isError: true });
+        res = await apiRequest('/movies', {
+          method: 'POST',
+          body: formData,
+        });
+      } else {
+        res = await apiRequest('/movies', {
+          method: 'POST',
+          body: JSON.stringify({
+            title: newTitle,
+            description: newDesc,
+            durationMin: Number(newDuration),
+            posterUrl: newPoster || avatarPreview || undefined,
+            avatarUrl: newPoster || avatarPreview || undefined,
+          }),
+        });
+      }
+
+      if (res.success) {
+        setMovieFeedback({ message: 'Movie and avatar added successfully!', isError: false });
+        setNewTitle('');
+        setNewDesc('');
+        setNewPoster('');
+        setNewAvatarFile(null);
+        setAvatarPreview(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        await fetchMovies();
+      } else {
+        const errMsg = res.error?.message || (res as any).message || 'Failed to add movie';
+        setMovieFeedback({ message: errMsg, isError: true });
+      }
+    } catch (err: any) {
+      setMovieFeedback({ message: err?.message || 'Error occurred while saving movie', isError: true });
+    } finally {
+      setIsCreatingMovie(false);
     }
   };
 
@@ -118,13 +162,19 @@ export const AdminDashboard: React.FC = () => {
   const [editActive, setEditActive] = useState<boolean>(true);
   const [actionFeedback, setActionFeedback] = useState<{ message: string; isError: boolean } | null>(null);
 
+  const [inspectSeats, setInspectSeats] = useState<SeatInfo[]>([]);
+
   const handleInspectOccupancy = async (showId: string) => {
     setSelectedShowId(showId);
-    // Also tests GET /shows/:id endpoint for comprehensive route coverage
-    await apiRequest(`/shows/${showId}`);
+    // Fetch occupancy summary
     const res = await apiRequest<OccupancyData>(`/shows/${showId}/occupancy`);
     if (res.success && res.data) {
       setOccupancy(res.data);
+    }
+    // Fetch identical seat map layout with booked/available statuses marked
+    const seatsRes = await apiRequest<{ seats: SeatInfo[] }>(`/shows/${showId}/seats`);
+    if (seatsRes.success && seatsRes.data) {
+      setInspectSeats(seatsRes.data.seats);
     }
   };
 
@@ -438,19 +488,133 @@ export const AdminDashboard: React.FC = () => {
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px' }}>Poster URL</label>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: '#cbd5e1', marginBottom: '4px' }}>Poster / Avatar URL</label>
                 <input
                   type="url"
                   placeholder="https://..."
                   value={newPoster}
-                  onChange={(e) => setNewPoster(e.target.value)}
+                  onChange={(e) => {
+                    setNewPoster(e.target.value);
+                    setAvatarPreview(e.target.value);
+                  }}
                   style={{ width: '100%', padding: '10px', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid var(--border-glass)', color: '#fff' }}
                 />
               </div>
             </div>
 
-            <button type="submit" className="btn btn-outline" style={{ marginTop: '8px' }}>
-              <Plus size={16} /> Save Movie
+            {/* Movie Avatar Image Upload & Presets */}
+            <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: '14px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#E2E8F0', marginBottom: '8px' }}>
+                Movie Avatar & Poster Image
+              </label>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                {/* Live Avatar Preview Thumbnail */}
+                <div
+                  style={{
+                    width: '54px',
+                    height: '72px',
+                    borderRadius: '8px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px dashed rgba(255, 255, 255, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {avatarPreview || newPoster ? (
+                    <img
+                      src={avatarPreview || newPoster}
+                      alt="Avatar Preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <Film size={20} color="#64748B" />
+                  )}
+                </div>
+
+                {/* File Upload Input */}
+                <div style={{ flex: 1, minWidth: '180px' }}>
+                  <label
+                    style={{
+                      display: 'inline-block',
+                      fontSize: '0.75rem',
+                      color: '#94A3B8',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    Upload Avatar Image File:
+                  </label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    name="avatar"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setNewAvatarFile(file);
+                        const previewUrl = URL.createObjectURL(file);
+                        setAvatarPreview(previewUrl);
+                      }
+                    }}
+                    style={{
+                      fontSize: '0.8rem',
+                      color: '#94A3B8',
+                      width: '100%',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Quick Preset Avatars */}
+              <div>
+                <span style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginBottom: '6px' }}>
+                  Or Pick a Preset Avatar:
+                </span>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {AVATAR_PRESETS.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        setNewPoster(preset.url);
+                        setAvatarPreview(preset.url);
+                        setNewAvatarFile(null);
+                      }}
+                      style={{
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        fontSize: '0.72rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        background: (newPoster === preset.url || avatarPreview === preset.url) ? 'rgba(255, 56, 92, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                        color: (newPoster === preset.url || avatarPreview === preset.url) ? '#FF385C' : '#CBD5E1',
+                      }}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-outline"
+              disabled={isCreatingMovie}
+              style={{
+                marginTop: '8px',
+                opacity: isCreatingMovie ? 0.7 : 1,
+                cursor: isCreatingMovie ? 'not-allowed' : 'pointer',
+              }}
+            >
+              <Plus size={16} /> {isCreatingMovie ? 'Saving Movie...' : 'Save Movie'}
             </button>
           </form>
         </div>
@@ -584,6 +748,29 @@ export const AdminDashboard: React.FC = () => {
                   No confirmed bookings for this show yet.
                 </div>
               )}
+
+              {/* Exact Seat Map as Seen by Customers with Booked Seats Marked */}
+              <div style={{ marginTop: '24px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '20px' }}>
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '6px', color: '#F1F5F9', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>💺</span> Live Auditorium Seat Map (80 Seats)
+                </h4>
+                <p style={{ fontSize: '0.82rem', color: '#94A3B8', marginBottom: '16px' }}>
+                  Staff view matches customer perspective. Booked seats are marked in dark grey with lock status; available seats are highlighted in emerald.
+                </p>
+                {inspectSeats.length > 0 ? (
+                  <div style={{ background: 'rgba(10, 14, 23, 0.6)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                    <SeatMap
+                      seats={inspectSeats}
+                      selectedSeatIds={[]}
+                      onToggleSeat={() => {}}
+                    />
+                  </div>
+                ) : (
+                  <div style={{ padding: '12px', textAlign: 'center', color: '#94A3B8', fontSize: '0.85rem' }}>
+                    Loading seat layout...
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
