@@ -8,7 +8,7 @@
 
 ---
 
-## 📬 Submission Checklist & Quick Reference
+##  Quick Reference
 
 | Deliverable | Details & Links | Status |
 |---|---|---|
